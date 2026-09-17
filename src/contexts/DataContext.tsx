@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Issue } from '../types';
 import { sampleIssues } from '../data/sampleIssues';
+import { IssuesService } from '../services/firestoreService';
+import { isFirebaseConfigured } from '../config/firebase';
 
 interface DataContextType {
   issues: Issue[];
@@ -10,43 +12,95 @@ interface DataContextType {
   getIssuesByBranch: (branchId: string) => Issue[];
   getIssuesByStatus: (status: string) => Issue[];
   getIssuesByDateRange: (start: Date, end: Date) => Issue[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('qms_issues');
-    if (stored) {
-      setIssues(JSON.parse(stored));
+    // If Firebase is configured, use Firestore with real-time updates
+    if (isFirebaseConfigured) {
+      const unsubscribe = IssuesService.subscribe((newIssues) => {
+        setIssues(newIssues);
+        setIsLoading(false);
+      });
+
+      return () => unsubscribe();
     } else {
-      setIssues(sampleIssues);
-      localStorage.setItem('qms_issues', JSON.stringify(sampleIssues));
+      // Fallback to localStorage for demo/development
+      const stored = localStorage.getItem('qms_issues');
+      if (stored) {
+        setIssues(JSON.parse(stored));
+      } else {
+        setIssues(sampleIssues);
+        localStorage.setItem('qms_issues', JSON.stringify(sampleIssues));
+      }
+      setIsLoading(false);
     }
   }, []);
 
-  const saveIssues = (newIssues: Issue[]) => {
+  const saveIssues = async (newIssues: Issue[]) => {
     setIssues(newIssues);
+    
+    // Save to localStorage as cache/fallback
     localStorage.setItem('qms_issues', JSON.stringify(newIssues));
   };
 
-  const addIssue = (issue: Issue) => {
-    const newIssues = [issue, ...issues];
-    saveIssues(newIssues);
+  const addIssue = async (issue: Issue) => {
+    try {
+      if (isFirebaseConfigured) {
+        const { id, ...issueData } = issue;
+        const newId = await IssuesService.create(issueData);
+        const newIssue = { ...issue, id: newId };
+        setIssues(prev => [newIssue, ...prev]);
+      } else {
+        const newIssues = [issue, ...issues];
+        await saveIssues(newIssues);
+      }
+    } catch (err) {
+      setError('Failed to add issue');
+      console.error(err);
+    }
   };
 
-  const updateIssue = (id: string, updates: Partial<Issue>) => {
-    const newIssues = issues.map(issue =>
-      issue.id === id ? { ...issue, ...updates } : issue
-    );
-    saveIssues(newIssues);
+  const updateIssue = async (id: string, updates: Partial<Issue>) => {
+    try {
+      if (isFirebaseConfigured) {
+        await IssuesService.update(id, updates);
+        setIssues(prev => prev.map(issue =>
+          issue.id === id ? { ...issue, ...updates } : issue
+        ));
+      } else {
+        const newIssues = issues.map(issue =>
+          issue.id === id ? { ...issue, ...updates } : issue
+        );
+        await saveIssues(newIssues);
+      }
+    } catch (err) {
+      setError('Failed to update issue');
+      console.error(err);
+    }
   };
 
-  const deleteIssue = (id: string) => {
-    const newIssues = issues.filter(issue => issue.id !== id);
-    saveIssues(newIssues);
+  const deleteIssue = async (id: string) => {
+    try {
+      if (isFirebaseConfigured) {
+        await IssuesService.delete(id);
+        setIssues(prev => prev.filter(issue => issue.id !== id));
+      } else {
+        const newIssues = issues.filter(issue => issue.id !== id);
+        await saveIssues(newIssues);
+      }
+    } catch (err) {
+      setError('Failed to delete issue');
+      console.error(err);
+    }
   };
 
   const getIssuesByBranch = (branchId: string) =>
@@ -70,6 +124,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       getIssuesByBranch,
       getIssuesByStatus,
       getIssuesByDateRange,
+      isLoading,
+      error,
     }}>
       {children}
     </DataContext.Provider>
