@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User } from '../types';
 import { userService } from '../services/UserService';
 import { dbManager } from '../database/connection';
+import { logger } from '../utils/logger';
+import { toastNotifications } from '../utils/notifications';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -29,10 +31,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const user = userService.getUserById(storedUserId);
           if (user) {
             setCurrentUser(user);
+            logger.setUserId(user.id);
+            logger.info('Session restored', 'Auth', { userId: user.id });
           }
         }
       } catch (err) {
-        console.error('Failed to initialize auth:', err);
+        logger.error('Failed to initialize auth', 'Auth', { error: err });
       }
     };
 
@@ -41,22 +45,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = (email: string, password: string): boolean => {
     try {
+      logger.info('Login attempt', 'Auth', { email });
+      
       const user = userService.authenticate(email, password);
+      
       if (user) {
         setCurrentUser(user);
         sessionStorage.setItem('qms_currentUserId', user.id);
+        logger.setUserId(user.id);
+        logger.info('Login successful', 'Auth', { userId: user.id, role: user.role });
+        toastNotifications.success.loginSuccess();
         return true;
       }
+      
+      logger.warn('Login failed: Invalid credentials', 'Auth', { email });
+      toastNotifications.error.loginFailed();
       return false;
     } catch (err) {
-      console.error('Login failed:', err);
+      logger.error('Login error', 'Auth', { error: err });
+      toastNotifications.error.custom('حدث خطأ أثناء تسجيل الدخول');
       return false;
     }
   };
 
   const logout = () => {
+    logger.info('User logout', 'Auth', { userId: currentUser?.id });
     setCurrentUser(null);
     sessionStorage.removeItem('qms_currentUserId');
+    logger.setUserId(null);
+    toastNotifications.success.logoutSuccess();
   };
 
   return (

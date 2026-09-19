@@ -6,6 +6,8 @@
 
 import { userRepository } from '../database/repositories';
 import { User } from '../types';
+import { getDefaultUsers } from '../config/env';
+import { logger } from '../utils/logger';
 
 export class UserService {
   /**
@@ -30,12 +32,57 @@ export class UserService {
   }
 
   /**
-   * Authenticate user
+   * Authenticate user with password validation
    */
-  authenticate(email: string, _password: string): User | null {
-    // For demo purposes, we skip password validation
-    // In production, use proper password hashing and validation
-    return userRepository.findByEmail(email);
+  authenticate(email: string, password: string): User | null {
+    // Get default users from environment variables
+    const defaultUsers = getDefaultUsers();
+    
+    // Find user in default users
+    const defaultUser = defaultUsers.find(u => u.email === email);
+    
+    if (defaultUser) {
+      // Validate password
+      if (defaultUser.password !== password) {
+        logger.warn('Authentication failed: Invalid password', 'AuthService', { email });
+        return null;
+      }
+      
+      // Find or create user in database
+      let user = userRepository.findByEmail(email);
+      
+      if (!user) {
+        // Create user in database
+        const userId = userRepository.create({
+          name: defaultUser.name,
+          email: defaultUser.email,
+          role: defaultUser.role,
+          branch: defaultUser.branch,
+        });
+        user = userRepository.findById(userId);
+      }
+      
+      logger.info('User authenticated successfully', 'AuthService', { 
+        email, 
+        role: user?.role 
+      });
+      
+      return user;
+    }
+    
+    // Check database users (for custom users)
+    const dbUser = userRepository.findByEmail(email);
+    if (dbUser) {
+      // In production, validate password hash here
+      logger.info('User authenticated from database', 'AuthService', { 
+        email, 
+        role: dbUser.role 
+      });
+      return dbUser;
+    }
+    
+    logger.warn('Authentication failed: User not found', 'AuthService', { email });
+    return null;
   }
 
   /**
