@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Issue } from '../types';
-import { sampleIssues } from '../data/sampleIssues';
-import { IssuesService } from '../services/firestoreService';
-import { isFirebaseConfigured } from '../config/firebase';
+import { issueService } from '../services/IssueService';
+import { dbManager } from '../database/connection';
 
 interface DataContextType {
   issues: Issue[];
-  addIssue: (issue: Issue) => void;
+  isLoading: boolean;
+  error: string | null;
+  addIssue: (issue: Omit<Issue, 'id'>) => void;
   updateIssue: (id: string, updates: Partial<Issue>) => void;
   deleteIssue: (id: string) => void;
+  refreshIssues: () => void;
   getIssuesByBranch: (branchId: string) => Issue[];
   getIssuesByStatus: (status: string) => Issue[];
   getIssuesByDateRange: (start: Date, end: Date) => Issue[];
-  isLoading: boolean;
-  error: string | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -23,109 +23,87 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize database and load issues
   useEffect(() => {
-    // If Firebase is configured, use Firestore with real-time updates
-    if (isFirebaseConfigured) {
-      const unsubscribe = IssuesService.subscribe((newIssues) => {
-        setIssues(newIssues);
+    const initializeDatabase = async () => {
+      try {
+        setIsLoading(true);
+        await dbManager.initialize();
+        
+        // Load issues from SQLite
+        const loadedIssues = issueService.getAllIssues();
+        setIssues(loadedIssues);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to initialize database:', err);
+        setError('Failed to initialize database');
+      } finally {
         setIsLoading(false);
-      });
-
-      return () => unsubscribe();
-    } else {
-      // Fallback to localStorage for demo/development
-      const stored = localStorage.getItem('qms_issues');
-      if (stored) {
-        setIssues(JSON.parse(stored));
-      } else {
-        setIssues(sampleIssues);
-        localStorage.setItem('qms_issues', JSON.stringify(sampleIssues));
       }
-      setIsLoading(false);
-    }
+    };
+
+    initializeDatabase();
   }, []);
 
-  const saveIssues = async (newIssues: Issue[]) => {
-    setIssues(newIssues);
-    
-    // Save to localStorage as cache/fallback
-    localStorage.setItem('qms_issues', JSON.stringify(newIssues));
+  const refreshIssues = () => {
+    const loadedIssues = issueService.getAllIssues();
+    setIssues(loadedIssues);
   };
 
-  const addIssue = async (issue: Issue) => {
+  const addIssue = (issue: Omit<Issue, 'id'>) => {
     try {
-      if (isFirebaseConfigured) {
-        const { id, ...issueData } = issue;
-        const newId = await IssuesService.create(issueData);
-        const newIssue = { ...issue, id: newId };
-        setIssues(prev => [newIssue, ...prev]);
-      } else {
-        const newIssues = [issue, ...issues];
-        await saveIssues(newIssues);
-      }
+      issueService.createIssue(issue);
+      refreshIssues();
     } catch (err) {
+      console.error('Failed to add issue:', err);
       setError('Failed to add issue');
-      console.error(err);
     }
   };
 
-  const updateIssue = async (id: string, updates: Partial<Issue>) => {
+  const updateIssue = (id: string, updates: Partial<Issue>) => {
     try {
-      if (isFirebaseConfigured) {
-        await IssuesService.update(id, updates);
-        setIssues(prev => prev.map(issue =>
-          issue.id === id ? { ...issue, ...updates } : issue
-        ));
-      } else {
-        const newIssues = issues.map(issue =>
-          issue.id === id ? { ...issue, ...updates } : issue
-        );
-        await saveIssues(newIssues);
-      }
+      issueService.updateIssue(id, updates);
+      refreshIssues();
     } catch (err) {
+      console.error('Failed to update issue:', err);
       setError('Failed to update issue');
-      console.error(err);
     }
   };
 
-  const deleteIssue = async (id: string) => {
+  const deleteIssue = (id: string) => {
     try {
-      if (isFirebaseConfigured) {
-        await IssuesService.delete(id);
-        setIssues(prev => prev.filter(issue => issue.id !== id));
-      } else {
-        const newIssues = issues.filter(issue => issue.id !== id);
-        await saveIssues(newIssues);
-      }
+      issueService.deleteIssue(id);
+      refreshIssues();
     } catch (err) {
+      console.error('Failed to delete issue:', err);
       setError('Failed to delete issue');
-      console.error(err);
     }
   };
 
-  const getIssuesByBranch = (branchId: string) =>
-    issues.filter(issue => issue.branchId === branchId);
+  const getIssuesByBranch = (branchId: string): Issue[] => {
+    return issueService.getIssuesByBranch(branchId);
+  };
 
-  const getIssuesByStatus = (status: string) =>
-    issues.filter(issue => issue.status === status);
+  const getIssuesByStatus = (status: string): Issue[] => {
+    return issueService.getIssuesByStatus(status);
+  };
 
-  const getIssuesByDateRange = (start: Date, end: Date) =>
-    issues.filter(issue => {
-      const date = new Date(issue.reportedAt);
-      return date >= start && date <= end;
-    });
+  const getIssuesByDateRange = (start: Date, end: Date): Issue[] => {
+    return issueService.getIssuesByDateRange(start, end);
+  };
 
   return (
     <DataContext.Provider value={{
       issues,
+      isLoading,
+      error,
       addIssue,
       updateIssue,
       deleteIssue,
+      refreshIssues,
       getIssuesByBranch,
       getIssuesByStatus,
       getIssuesByDateRange,
-      isLoading,
-      error,
     }}>
       {children}
     </DataContext.Provider>

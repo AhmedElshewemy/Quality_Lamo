@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { users } from '../data/users';
+import { userService } from '../services/UserService';
+import { dbManager } from '../database/connection';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -15,25 +16,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('qms_currentUser');
-    if (stored) {
-      setCurrentUser(JSON.parse(stored));
-    }
+    const initializeAuth = async () => {
+      try {
+        // Initialize database if not already initialized
+        if (!dbManager.isReady()) {
+          await dbManager.initialize();
+        }
+
+        // Check for stored session
+        const storedUserId = sessionStorage.getItem('qms_currentUserId');
+        if (storedUserId) {
+          const user = userService.getUserById(storedUserId);
+          if (user) {
+            setCurrentUser(user);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to initialize auth:', err);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = (email: string, _password: string): boolean => {
-    const user = users.find(u => u.email === email);
-    if (user) {
-      setCurrentUser(user);
-      localStorage.setItem('qms_currentUser', JSON.stringify(user));
-      return true;
+  const login = (email: string, password: string): boolean => {
+    try {
+      const user = userService.authenticate(email, password);
+      if (user) {
+        setCurrentUser(user);
+        sessionStorage.setItem('qms_currentUserId', user.id);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Login failed:', err);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('qms_currentUser');
+    sessionStorage.removeItem('qms_currentUserId');
   };
 
   return (

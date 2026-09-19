@@ -23,6 +23,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.30.6",
     "recharts": "^2.15.4",
+    "sql.js": "^1.14.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
