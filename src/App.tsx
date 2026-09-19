@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import Login from './pages/Login';
@@ -9,10 +9,37 @@ import IssuesList from './pages/IssuesList';
 import Reports from './pages/Reports';
 import Branches from './pages/Branches';
 import Staff from './pages/Staff';
+import ErrorBoundary from './components/ErrorBoundary';
+import { Toaster } from 'react-hot-toast';
+import { logger } from './utils/logger';
+import { errorHandler } from './utils/errorHandler';
+import { PerformanceUtils } from './utils/performance';
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  // Set user ID in logger when authenticated
+  useEffect(() => {
+    if (currentUser) {
+      logger.setUserId(currentUser.id);
+      logger.info('User logged in', 'Auth', { userId: currentUser.id, role: currentUser.role });
+    } else {
+      logger.setUserId(null);
+    }
+  }, [currentUser]);
+
+  // Setup global error handlers
+  useEffect(() => {
+    errorHandler.setupGlobalHandlers();
+    
+    // Log performance metrics after page load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        PerformanceUtils.logPerformanceMetrics();
+      }, 1000);
+    });
+  }, []);
 
   if (!isAuthenticated) {
     return <Login />;
@@ -40,19 +67,39 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-      {renderPage()}
-    </Layout>
+    <>
+      <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
+        {renderPage()}
+      </Layout>
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            direction: 'rtl',
+            fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+          },
+          success: {
+            duration: 3000,
+          },
+          error: {
+            duration: 4000,
+          },
+        }}
+      />
+    </>
   );
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <AppContent />
-      </DataProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
