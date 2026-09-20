@@ -10,19 +10,21 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     
-    // Simulate loading
-    setTimeout(() => {
-      const success = login(email, password);
+    try {
+      const success = await login(email, password);
       if (!success) {
         setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
+    } catch (err) {
+      setError('حدث خطأ أثناء تسجيل الدخول');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (

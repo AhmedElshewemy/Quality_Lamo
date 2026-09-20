@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { userService } from '../services/UserService';
-import { dbManager } from '../database/connection';
+import { apiClient } from '../services/apiClient';
 import { logger } from '../utils/logger';
 import { toastNotifications } from '../utils/notifications';
 
 interface AuthContextType {
   currentUser: User | null;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -18,60 +17,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const initializeAuth = async () => {
+    // Check for stored token and restore session
+    const token = sessionStorage.getItem('auth_token');
+    const storedUser = sessionStorage.getItem('auth_user');
+    
+    if (token && storedUser) {
       try {
-        // Initialize database if not already initialized
-        if (!dbManager.isReady()) {
-          await dbManager.initialize();
-        }
-
-        // Check for stored session
-        const storedUserId = sessionStorage.getItem('qms_currentUserId');
-        if (storedUserId) {
-          const user = userService.getUserById(storedUserId);
-          if (user) {
-            setCurrentUser(user);
-            logger.setUserId(user.id);
-            logger.info('Session restored', 'Auth', { userId: user.id });
-          }
-        }
+        const user = JSON.parse(storedUser);
+        setCurrentUser(user);
+        logger.setUserId(user.id);
+        logger.info('Session restored', 'Auth', { userId: user.id });
       } catch (err) {
-        logger.error('Failed to initialize auth', 'Auth', { error: err });
+        logger.error('Failed to restore session', 'Auth', { error: err });
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_user');
       }
-    };
-
-    initializeAuth();
+    }
   }, []);
 
-  const login = (email: string, password: string): boolean => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       logger.info('Login attempt', 'Auth', { email });
       
-      const user = userService.authenticate(email, password);
+      const response = await apiClient.post<{ token: string; user: User }>('/auth/login', {
+        email,
+        password,
+      });
       
-      if (user) {
-        setCurrentUser(user);
-        sessionStorage.setItem('qms_currentUserId', user.id);
-        logger.setUserId(user.id);
-        logger.info('Login successful', 'Auth', { userId: user.id, role: user.role });
-        toastNotifications.success.loginSuccess();
-        return true;
-      }
+      // Store token and user
+      apiClient.setToken(response.token);
+      sessionStorage.setItem('auth_user', JSON.stringify(response.user));
       
-      logger.warn('Login failed: Invalid credentials', 'Auth', { email });
-      toastNotifications.error.loginFailed();
-      return false;
+      setCurrentUser(response.user);
+      logger.setUserId(response.user.id);
+      logger.info('Login successful', 'Auth', { userId: response.user.id, role: response.user.role });
+      toastNotifications.success.loginSuccess();
+      return true;
     } catch (err) {
-      logger.error('Login error', 'Auth', { error: err });
-      toastNotifications.error.custom('حدث خطأ أثناء تسجيل الدخول');
+      logger.error('Login failed', 'Auth', { error: err, email });
+      toastNotifications.error.loginFailed();
       return false;
     }
   };
 
   const logout = () => {
     logger.info('User logout', 'Auth', { userId: currentUser?.id });
+    apiClient.clearToken();
     setCurrentUser(null);
-    sessionStorage.removeItem('qms_currentUserId');
+    sessionStorage.removeItem('auth_user');
     logger.setUserId(null);
     toastNotifications.success.logoutSuccess();
   };

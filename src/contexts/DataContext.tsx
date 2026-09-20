@@ -1,16 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Issue } from '../types';
-import { issueService } from '../services/IssueService';
-import { dbManager } from '../database/connection';
+import { apiClient } from '../services/apiClient';
 
 interface DataContextType {
   issues: Issue[];
   isLoading: boolean;
   error: string | null;
-  addIssue: (issue: Omit<Issue, 'id'>) => void;
-  updateIssue: (id: string, updates: Partial<Issue>) => void;
-  deleteIssue: (id: string) => void;
-  refreshIssues: () => void;
+  addIssue: (issue: Omit<Issue, 'id'>) => Promise<void>;
+  updateIssue: (id: string, updates: Partial<Issue>) => Promise<void>;
+  deleteIssue: (id: string) => Promise<void>;
+  refreshIssues: () => Promise<void>;
   getIssuesByBranch: (branchId: string) => Issue[];
   getIssuesByStatus: (status: string) => Issue[];
   getIssuesByDateRange: (start: Date, end: Date) => Issue[];
@@ -23,73 +22,75 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize database and load issues
+  // Load issues from backend
   useEffect(() => {
-    const initializeDatabase = async () => {
-      try {
-        setIsLoading(true);
-        await dbManager.initialize();
-        
-        // Load issues from SQLite
-        const loadedIssues = issueService.getAllIssues();
-        setIssues(loadedIssues);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to initialize database:', err);
-        setError('Failed to initialize database');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeDatabase();
+    loadIssues();
   }, []);
 
-  const refreshIssues = () => {
-    const loadedIssues = issueService.getAllIssues();
-    setIssues(loadedIssues);
+  const loadIssues = async () => {
+    try {
+      setIsLoading(true);
+      const loadedIssues = await apiClient.get<Issue[]>('/issues');
+      setIssues(loadedIssues);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to load issues:', err);
+      setError('Failed to load issues');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addIssue = (issue: Omit<Issue, 'id'>) => {
+  const refreshIssues = async () => {
+    await loadIssues();
+  };
+
+  const addIssue = async (issue: Omit<Issue, 'id'>) => {
     try {
-      issueService.createIssue(issue);
-      refreshIssues();
+      await apiClient.post<Issue>('/issues', issue);
+      await refreshIssues();
     } catch (err) {
       console.error('Failed to add issue:', err);
       setError('Failed to add issue');
+      throw err;
     }
   };
 
-  const updateIssue = (id: string, updates: Partial<Issue>) => {
+  const updateIssue = async (id: string, updates: Partial<Issue>) => {
     try {
-      issueService.updateIssue(id, updates);
-      refreshIssues();
+      await apiClient.put<Issue>(`/issues/${id}`, updates);
+      await refreshIssues();
     } catch (err) {
       console.error('Failed to update issue:', err);
       setError('Failed to update issue');
+      throw err;
     }
   };
 
-  const deleteIssue = (id: string) => {
+  const deleteIssue = async (id: string) => {
     try {
-      issueService.deleteIssue(id);
-      refreshIssues();
+      await apiClient.delete(`/issues/${id}`);
+      await refreshIssues();
     } catch (err) {
       console.error('Failed to delete issue:', err);
       setError('Failed to delete issue');
+      throw err;
     }
   };
 
   const getIssuesByBranch = (branchId: string): Issue[] => {
-    return issueService.getIssuesByBranch(branchId);
+    return issues.filter(issue => issue.branchId === branchId);
   };
 
   const getIssuesByStatus = (status: string): Issue[] => {
-    return issueService.getIssuesByStatus(status);
+    return issues.filter(issue => issue.status === status);
   };
 
   const getIssuesByDateRange = (start: Date, end: Date): Issue[] => {
-    return issueService.getIssuesByDateRange(start, end);
+    return issues.filter(issue => {
+      const date = new Date(issue.reportedAt);
+      return date >= start && date <= end;
+    });
   };
 
   return (
