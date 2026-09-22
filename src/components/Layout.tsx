@@ -1,15 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  PlusCircle, 
-  List, 
-  LogOut, 
-  Fish,
-  Building2,
-  Users
-} from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, List, LogOut, Fish, Building2, Users } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,27 +11,17 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) => {
   const { currentUser, logout } = useAuth();
 
-  const engineerMenu = [
+  const menu = [
     { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
     { id: 'report-issue', label: 'تقرير مشكلة', icon: PlusCircle },
     { id: 'my-issues', label: 'مشاكلي', icon: List },
-  ];
-
-  const managerMenu = [
-    { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
-    { id: 'all-issues', label: 'جميع المشاكل', icon: List },
     { id: 'reports', label: 'التقارير', icon: FileText },
     { id: 'branches', label: 'الفروع', icon: Building2 },
     { id: 'staff', label: 'الموظفين', icon: Users },
   ];
 
-  const menu = currentUser?.role === 'quality_manager' || currentUser?.role === 'admin' 
-    ? managerMenu 
-    : engineerMenu;
-
   return (
     <div className="min-h-screen bg-gray-50 flex" dir="rtl">
-      {/* Sidebar */}
       <aside className="w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white flex flex-col shadow-xl">
         <div className="p-6 border-b border-blue-700">
           <div className="flex items-center gap-3">
@@ -96,7 +77,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) =>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {children}
       </main>
