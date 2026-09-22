@@ -11,35 +11,16 @@ import Branches from './pages/Branches';
 import Staff from './pages/Staff';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
-import { logger } from './utils/logger';
-import { errorHandler } from './utils/errorHandler';
-import { PerformanceUtils } from './utils/performance';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
-  // Set user ID in logger when authenticated
   useEffect(() => {
     if (currentUser) {
-      logger.setUserId(currentUser.id);
-      logger.info('User logged in', 'Auth', { userId: currentUser.id, role: currentUser.role });
-    } else {
-      logger.setUserId(null);
+      console.log('User logged in:', currentUser.name);
     }
   }, [currentUser]);
-
-  // Setup global error handlers
-  useEffect(() => {
-    errorHandler.setupGlobalHandlers();
-    
-    // Log performance metrics after page load
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        PerformanceUtils.logPerformanceMetrics();
-      }, 1000);
-    });
-  }, []);
 
   if (!isAuthenticated) {
     return <Login />;

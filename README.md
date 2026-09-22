@@ -1,246 +1,251 @@
-# 🐟 نظام إدارة الجودة - مطعم سي فود
+# 🐟 Seafood QMS - Quality Management System
 
-## ✅ النظام جاهز للإنتاج!
+نظام إدارة جودة شامل لمطعم سي فود مع فصل كامل بين Frontend و Backend.
 
-نظام شامل لإدارة الجودة مبني بـ **Clean Architecture** مع **Backend حقيقي** و**SQLite Database**.
+## 🏗️ Architecture
 
----
+```
+seafood-qms/
+├── client/          # Frontend (React + TypeScript + Vite)
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── server/          # Backend (Express + TypeScript + SQLite)
+│   ├── src/
+│   ├── package.json
+│   └── tsconfig.json
+│
+└── package.json     # Root orchestration
+```
 
-## 🎯 المميزات
+## ✨ Features
 
-### للأمان:
-- ✅ Backend حقيقي بـ TypeScript
+### Frontend
+- ✅ React 18 with TypeScript
+- ✅ Tailwind CSS with RTL support
+- ✅ JWT Authentication
+- ✅ API Client with token management
+- ✅ Error Boundaries
+- ✅ Toast Notifications
+
+### Backend
+- ✅ Express.js with TypeScript
+- ✅ SQLite Database
 - ✅ JWT Authentication
 - ✅ Password Hashing (bcrypt)
 - ✅ Rate Limiting
 - ✅ Security Headers (Helmet)
 - ✅ CORS Protection
-- ✅ Server-side Validation
-- ✅ البيانات على السيرفر (مش في المتصفح)
 
-### للوظائف:
-- ✅ رفع المشاكل بالصور والتفاصيل
-- ✅ تقييم المطابقة (مطابق / مطابق جزئياً / غير مطابق)
-- ✅ لوحة تحكم شاملة مع تحليلات
-- ✅ تقارير PDF
-- ✅ إدارة الفروع والموظفين
-- ✅ مقارنة الأداء (أسبوعي / شهري / ربع سنوي)
+## 🚀 Quick Start
 
----
-
-## 🚀 التشغيل السريع
-
-### للتطوير (Development):
-
-**Terminal 1 - Backend:**
-```bash
-npm run server:dev
-```
-
-**Terminal 2 - Frontend:**
-```bash
-npm run dev
-```
-
-- Backend: `http://localhost:3001`
-- Frontend: `http://localhost:5173`
-
----
-
-### للإنتاج (Production):
+### 1. Install Dependencies
 
 ```bash
-npm start
-```
+# Install all dependencies
+npm run install:all
 
-ده هي:
-1. ✅ يعمل build للـ Frontend
-2. ✅ يشغل الـ Backend
-3. ✅ يخدم كل حاجة على **port واحد**: `http://localhost:3001`
-
----
-
-## 🔐 بيانات الدخول
-
-### 👑 مدير النظام:
-```
-البريد: admin@seafood.com
-كلمة المرور: Admin@123456
-```
-
-### 📊 مدير الجودة:
-```
-البريد: sara@seafood.com
-كلمة المرور: Manager@123
-```
-
-### 🔧 مهندس جودة:
-```
-البريد: ahmed@seafood.com
-كلمة المرور: Engineer@123
-```
-
----
-
-## 🏗️ البنية المعمارية
-
-```
-┌─────────────────────────────────────────┐
-│         Browser (Client)                │
-│    http://localhost:3001                │
-└──────────────┬──────────────────────────┘
-               │
-               │ HTTP + JWT Token
-               ▼
-┌─────────────────────────────────────────┐
-│    Express Server (TypeScript)          │
-│         Port 3001                       │
-├─────────────────────────────────────────┤
-│  /api/*      → API Endpoints            │
-│  /*          → Static Files (dist/)     │
-├─────────────────────────────────────────┤
-│  - Authentication (JWT)                 │
-│  - Authorization                        │
-│  - Validation                           │
-│  - Rate Limiting                        │
-│  - Security Headers                     │
-└──────────────┬──────────────────────────┘
-               │
-               │ SQL Queries
-               ▼
-┌─────────────────────────────────────────┐
-│         SQLite Database                 │
-│         (seafood_qms.db)                │
-└─────────────────────────────────────────┘
-```
-
----
-
-## 🛠️ التقنيات المستخدمة
-
-### Frontend:
-- React 18 + TypeScript
-- Tailwind CSS
-- Recharts (Charts)
-- jsPDF (PDF Reports)
-- React Hook Form + Zod (Validation)
-
-### Backend:
-- Express.js + TypeScript
-- better-sqlite3 (Database)
-- JWT (Authentication)
-- bcryptjs (Password Hashing)
-- Helmet (Security)
-- CORS & Rate Limiting
-
----
-
-## 📁 هيكل المشروع
-
-```
-seafood-qms/
-├── server/
-│   └── index.ts              # Backend بـ TypeScript
-├── src/
-│   ├── contexts/             # React Contexts (Auth, Data)
-│   ├── services/             # API Client
-│   ├── pages/                # Pages
-│   ├── components/           # Components
-│   └── ...
-├── dist/                     # Frontend build
-├── package.json
-├── tsconfig.server.json
-└── README.md
-```
-
----
-
-## 🔒 الأمان
-
-### قبل (بدون Backend):
-```
-❌ البيانات في localStorage
-❌ أي حد يفتح F12 ويشوف/يعدل البيانات
-❌ مفيش Authentication حقيقي
-❌ غير آمن للإنتاج
-```
-
-### بعد (مع Backend):
-```
-✅ البيانات على السيرفر
-✅ F12 مش هينفع يعدل البيانات
-✅ JWT Authentication
-✅ Password Hashing
-✅ آمن للإنتاج
-```
-
----
-
-## 📊 الأوامر المتاحة
-
-```bash
-# التطوير
-npm run dev              # Frontend فقط
-npm run server           # Backend فقط
-npm run server:dev       # Backend مع watch mode
-
-# الإنتاج
-npm run build            # Build Frontend
-npm start                # Build + Run Backend
-
-# Utilities
-npm run typecheck        # TypeScript check
-```
-
----
-
-## 📖 التوثيق
-
-- **[RUNNING.md](./RUNNING.md)** - دليل التشغيل الكامل
-- **[ARCHITECTURE_AR.md](./ARCHITECTURE_AR.md)** - شرح المعمارية
-- **[TECH_STACK.md](./TECH_STACK.md)** - التقنيات المستخدمة
-- **[SECURITY.md](./SECURITY.md)** - دليل الأمان
-- **[AUTH_GUIDE.md](./AUTH_GUIDE.md)** - دليل المصادقة
-
----
-
-## 🎯 الخلاصة
-
-### النظام دلوقتي:
-- ✅ **آمن** - Backend حقيقي + JWT
-- ✅ **Production Ready** - جاهز للإنتاج
-- ✅ **Scalable** - قابل للتوسع
-- ✅ **Maintainable** - سهل الصيانة
-- ✅ **Well Documented** - موثق بشكل شامل
-
----
-
-## 🚀 البدء السريع
-
-```bash
-# 1. تثبيت الـ dependencies
+# Or manually:
 npm install
+cd client && npm install
+cd ../server && npm install
+```
 
-# 2. للتطوير
-npm run server:dev    # Terminal 1
-npm run dev           # Terminal 2
+### 2. Development Mode
 
-# 3. للإنتاج
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Or separately:
+npm run dev:client    # Frontend on http://localhost:5173
+npm run dev:server    # Backend on http://localhost:3001
+```
+
+### 3. Production Mode
+
+```bash
+# Build both frontend and backend
+npm run build
+
+# Start production server (serves frontend from client/dist/)
 npm start
 
-# 4. افتح المتصفح
-http://localhost:3001
+# Access at http://localhost:3001
 ```
+
+## 🔐 Default Credentials
+
+### 👑 Admin
+- Email: `admin@seafood.com`
+- Password: `Admin@123456`
+
+### 📊 Quality Manager
+- Email: `sara@seafood.com`
+- Password: `Manager@123`
+
+### 🔧 Quality Engineer
+- Email: `ahmed@seafood.com`
+- Password: `Engineer@123`
+
+## 📡 API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - Login
+
+### Issues
+- `GET /api/issues` - Get all issues
+- `POST /api/issues` - Create issue
+- `PUT /api/issues/:id` - Update issue
+- `DELETE /api/issues/:id` - Delete issue
+
+### Branches
+- `GET /api/branches` - Get all branches
+
+### Users
+- `GET /api/users` - Get all users
+
+### Statistics
+- `GET /api/stats/issues` - Get issue statistics
+
+### Health
+- `GET /api/health` - Health check
+
+## 🔒 Security Features
+
+- ✅ JWT Authentication
+- ✅ Password Hashing (bcrypt)
+- ✅ Rate Limiting (100 req/15min)
+- ✅ Security Headers (Helmet)
+- ✅ CORS Protection
+- ✅ SQL Injection Prevention
+- ✅ Input Validation
+
+## 📦 Available Scripts
+
+```bash
+# Development
+npm run dev              # Start both frontend and backend
+npm run dev:client       # Start frontend only
+npm run dev:server       # Start backend only
+
+# Build
+npm run build            # Build both frontend and backend
+npm run build:client     # Build frontend only
+npm run build:server     # Build backend only
+
+# Production
+npm start                # Start production server
+
+# Installation
+npm run install:all      # Install all dependencies
+```
+
+## 🗂️ Project Structure
+
+### Client (Frontend)
+```
+client/
+├── src/
+│   ├── components/     # Reusable components
+│   ├── contexts/       # React contexts (Auth, Data)
+│   ├── pages/          # Page components
+│   ├── services/       # API services
+│   ├── types/          # TypeScript types
+│   ├── App.tsx         # Main app
+│   └── main.tsx        # Entry point
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── tailwind.config.js
+```
+
+### Server (Backend)
+```
+server/
+├── src/
+│   └── index.ts        # Main server file
+├── package.json
+└── tsconfig.json
+```
+
+## 🔄 Data Flow
+
+### Development
+```
+Browser (localhost:5173)
+    ↓
+Vite Dev Server
+    ↓
+React App
+    ↓
+API Calls → http://localhost:3001/api/*
+    ↓
+Express Server
+    ↓
+SQLite Database
+```
+
+### Production
+```
+Browser (localhost:3001)
+    ↓
+Express Server
+    ├── /api/* → API Endpoints
+    └── /* → Static Files (client/dist/)
+    ↓
+SQLite Database
+```
+
+## 🛠️ Tech Stack
+
+### Frontend
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Lucide React (Icons)
+- React Hot Toast
+
+### Backend
+- Express.js
+- TypeScript
+- SQLite (better-sqlite3)
+- JWT
+- bcrypt
+- Helmet
+- CORS
+- Express Rate Limit
+
+## 📝 Documentation
+
+- [Client README](./client/README.md)
+- [Server README](./server/README.md)
+
+## 🎯 Benefits of Separation
+
+✅ **Clean Organization** - Clear separation of concerns  
+✅ **Easy Maintenance** - Independent development  
+✅ **Easy Deployment** - Separate deployment options  
+✅ **Scalability** - Scale frontend and backend independently  
+✅ **Team Collaboration** - Different teams can work on frontend/backend  
+
+## 🔐 Security
+
+The system is production-ready with:
+- Backend validates all requests
+- JWT tokens for authentication
+- Passwords are hashed (never stored in plain text)
+- Rate limiting prevents abuse
+- Security headers protect against common attacks
+- CORS configured properly
+
+## 📄 License
+
+MIT
 
 ---
 
-**آخر تحديث:** 2024  
-**الإصدار:** 1.0.0
-
-<div align="center">
-
-**🎉 Production Ready! 🚀**
-
-Made with ❤️ and Best Practices
-
-</div>
+**Built with ❤️ for Seafood Restaurant Quality Management**
