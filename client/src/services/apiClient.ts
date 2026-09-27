@@ -91,6 +91,13 @@ class ApiClient {
       throw new Error(error.error || 'Request failed');
     }
 
+    // A 204 No Content response (used by DELETE /api/issues/:id) has no body -
+    // calling response.json() on it throws, which would make every successful
+    // delete look like a failure to the caller.
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
     return response.json();
   }
 }

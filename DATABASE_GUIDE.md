@@ -1,442 +1,111 @@
-# 📚 دليل قاعدة البيانات
+# 🗄️ دليل قاعدة البيانات
 
-## الوضع الحالي
+النظام يستخدم **SQLite** عن طريق `better-sqlite3` - قاعدة بيانات ملف واحد (`server/seafood_qms.db`)، تُنشأ وتُهيّأ تلقائيًا عند أول تشغيل للسيرفر. مفيش أي اعتماد على Firebase أو أي قاعدة بيانات سحابية.
 
-النظام مصمم بـ **Dual Mode** - يشتغل بطريقتين:
+## 📍 مكان الملف
 
-### 1️⃣ وضع التطوير (Development Mode)
-- **قاعدة البيانات:** localStorage
-- **الاستخدام:** Demo وتطوير
-- **المميزات:**
-  - سريع وسهل
-  - لا يحتاج إعدادات
-  - البيانات محفوظة محلياً
-  - مناسب للاختبار
+مسار الملف محدد في `server/.env`:
+```bash
+DB_PATH=./seafood_qms.db
+```
+مسار نسبي لمجلد التشغيل الحالي (`server/` عادة). في حاوية Docker، الملف بيتخزن في `/app/data` (راجع `Dockerfile`).
 
-### 2️⃣ وضع الإنتاج (Production Mode)
-- **قاعدة البيانات:** Firebase Firestore
-- **الاستخدام:** الإنتاج الفعلي
-- **المميزات:**
-  - قاعدة بيانات سحابية
-  - تحديثات فورية (Real-time)
-  - مجانية للاستخدام البسيط
-  - قابلة للتوسع
+## 🧱 الجداول
 
----
-
-## 🔄 التبديل بين الوضعين
-
-### التبديل تلقائي!
-
-النظام بيكتشف تلقائياً:
-- لو **Firebase Config** موجود → يستخدم Firestore
-- لو **Firebase Config** مش موجود → يستخدم localStorage
-
----
-
-## 🔥 إعداد Firebase Firestore
-
-### الخطوة 1: إنشاء مشروع Firebase
-
-1. اذهب إلى [Firebase Console](https://console.firebase.google.com)
-2. اضغط **"Add Project"**
-3. اكتب اسم المشروع (مثلاً: `seafood-qms`)
-4. اتبع الخطوات لإنشاء المشروع
-
-### الخطوة 2: تفعيل Firestore Database
-
-1. في القائمة الجانبية، اضغط **Build > Firestore Database**
-2. اضغط **"Create database"**
-3. اختر **"Start in test mode"** (للتطوير)
-4. اختر الموقع الأقرب ليك
-5. اضغط **"Enable"**
-
-### الخطوة 3: إنشاء Web App
-
-1. في الصفحة الرئيسية للمشروع، اضغط على أيقونة **Web** (</>)
-2. اكتب اسم التطبيق (مثلاً: `Seafood QMS Web`)
-3. **لا** تضع علامة على "Firebase Hosting"
-4. اضغط **"Register app"**
-5. انسخ الـ **Config** اللي هيظهر
-
-### الخطوة 4: تحديث الكود
-
-افتح ملف `src/config/firebase.ts` واستبدل القيم:
-
-```typescript
-const firebaseConfig = {
-  apiKey: "AIzaSyB...............",           // من Firebase
-  authDomain: "seafood-qms.firebaseapp.com",
-  projectId: "seafood-qms",
-  storageBucket: "seafood-qms.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123..."
-};
+### `users`
+```sql
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,       -- bcrypt، مش plain text
+  role TEXT NOT NULL,                -- 'quality_engineer' | 'quality_manager' | 'admin'
+  branch_id TEXT,                    -- NULL للمدير/الأدمن (مش مربوطين بفرع)
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
-### الخطوة 5: إعادة التشغيل
+### `branches`
+```sql
+CREATE TABLE branches (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  location TEXT NOT NULL,
+  type TEXT NOT NULL,                -- 'branch' | 'central_kitchen_warehouse'
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
 
+### `issues`
+```sql
+CREATE TABLE issues (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  branch_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  priority TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',       -- 'open' | 'in_progress' | 'resolved' | 'closed'
+  compliance_status TEXT NOT NULL,           -- 'compliant' | 'partially_compliant' | 'non_compliant'
+  images TEXT DEFAULT '[]',                  -- JSON array من base64 data URIs
+  reported_by TEXT NOT NULL,
+  reported_at DATETIME NOT NULL,
+  resolved_at DATETIME,
+  resolution_notes TEXT,
+  assigned_to TEXT,
+  follow_up_date DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## ⚠️ camelCase في الـ API، snake_case في الجدول
+
+أعمدة الجدول snake_case (`branch_id`, `reported_at`, ...) لكن كل استجابات الـ API لازم تكون camelCase (`branchId`, `reportedAt`, ...) لأن `client/src/types/index.ts` متوقع الشكل ده.
+
+كل قراءة من جدول `issues` **لازم** تعدّي على دالة `mapIssueRow()` في `server/src/index.ts` قبل ما ترجع في الـ response - دي المسؤولة عن التحويل. لو ضفت endpoint جديد بيرجّع صفوف مشاكل، استخدمها بدل ما ترجّع الصف الخام:
+
+```ts
+const issue = db.prepare('SELECT * FROM issues WHERE id = ?').get(id);
+res.json(mapIssueRow(issue));   // ✅
+res.json(issue);                // ❌ هيرجع snake_case ويكسر الفرونت إند
+```
+
+جدول `users` بردو فيه نفس النقطة، بس بشكل أبسط: الاستعلام بنفسه بياليس العمود (`branch_id as branch`) بدل استخدام helper منفصل.
+
+## 🌱 البيانات الابتدائية (Seeding)
+
+عند أول تشغيل، لو جدول `users` فاضي، السيرفر بيعمل seed تلقائي بـ:
+- 3 حسابات (admin, quality_manager, quality_engineer) - بيانات الدخول في `README.md`
+- 4 فروع (3 فروع + المطبخ المركزي والمخزن الرئيسي كمكان واحد)
+- كذا مشكلة تجريبية
+
+لو عايز تبدأ من جديد ببيانات فاضية، امسح ملف الداتابيز (وملفات WAL/SHM المصاحبة له) وشغّل السيرفر تاني:
 ```bash
+cd server
+rm -f seafood_qms.db seafood_qms.db-shm seafood_qms.db-wal
 npm run dev
 ```
 
-الآن النظام هيستخدم Firebase Firestore تلقائياً!
-
----
-
-## 📊 هيكل البيانات في Firestore
-
-### Collection: `issues`
-
-```javascript
-{
-  id: "auto-generated",
-  title: "ارتفاع درجة حرارة الثلاجة",
-  description: "تم رصد ارتفاع في درجة الحرارة...",
-  branchId: "branch-1",
-  category: "temperature",
-  priority: "critical",
-  status: "open",
-  complianceStatus: "non_compliant",
-  images: ["url1", "url2"],
-  reportedBy: "user-1",
-  reportedAt: "2024-01-15T10:30:00Z",
-  resolvedAt: null,
-  resolutionNotes: null,
-  assignedTo: null,
-  createdAt: Timestamp,
-  updatedAt: Timestamp
-}
-```
-
-### Collection: `users`
-
-```javascript
-{
-  id: "user-1",
-  name: "أحمد محمد",
-  email: "ahmed@seafood.com",
-  role: "quality_engineer",
-  branch: "branch-1"
-}
-```
-
----
-
-## 🔐 إعداد Security Rules
-
-في Firebase Console > Firestore > Rules، ضع:
-
-### للبدء (Development):
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-```
-
-### للإنتاج (مع Authentication):
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Issues Collection
-    match /issues/{issueId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null 
-                    && request.auth.token.role == 'admin';
-    }
-    
-    // Users Collection
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null 
-                   && request.auth.token.role == 'admin';
-    }
-  }
-}
-```
-
----
-
-## 🎯 استخدام الـ Service Layer
-
-### إضافة مشكلة جديدة:
-
-```typescript
-import { IssuesService } from './services/firestoreService';
-
-const newIssue = {
-  title: "مشكلة جديدة",
-  description: "وصف المشكلة",
-  branchId: "branch-1",
-  category: "hygiene",
-  priority: "high",
-  status: "open",
-  complianceStatus: "non_compliant",
-  images: [],
-  reportedBy: "user-1",
-  reportedAt: new Date().toISOString()
-};
-
-const issueId = await IssuesService.create(newIssue);
-console.log("تم إنشاء المشكلة:", issueId);
-```
-
-### تحديث مشكلة:
-
-```typescript
-await IssuesService.update(issueId, {
-  status: "resolved",
-  resolvedAt: new Date().toISOString(),
-  resolutionNotes: "تم حل المشكلة"
-});
-```
-
-### الحصول على مشاكل فرع معين:
-
-```typescript
-const branchIssues = await IssuesService.getByBranch("branch-1");
-```
-
-### Real-time Updates:
-
-```typescript
-const unsubscribe = IssuesService.subscribe((issues) => {
-  console.log("تم تحديث المشاكل:", issues);
-  // تحديث الـ UI
-});
-
-// لاحقة، عند الخروج:
-unsubscribe();
-```
-
----
-
-## 📈 مقارنة قواعد البيانات
-
-| الميزة | localStorage | Firebase Firestore |
-|--------|-------------|-------------------|
-| **التكلفة** | مجاني | مجاني حتى 1GB |
-| **السرعة** | سريع جداً | سريع |
-| **Real-time** | ❌ | ✅ |
-| **Multi-device** | ❌ | ✅ |
-| **Backup** | ❌ | ✅ |
-| **Security** | ❌ | ✅ |
-| **Scalability** | ❌ | ✅ |
-| **Offline** | ✅ | ✅ (مع caching) |
-
----
-
-## 🔄 Migration من localStorage لـ Firestore
-
-### الخطوة 1: تصدير البيانات من localStorage
-
-```javascript
-// في Console المتصفح
-const data = localStorage.getItem('qms_issues');
-console.log(data);
-// انسخ الـ JSON
-```
-
-### الخطوة 2: استيراد البيانات إلى Firestore
-
-استخدم Firebase Console:
-1. اذهب إلى Firestore Database
-2. اضغط **"Start collection"**
-3. اسم الـ collection: `issues`
-4. أضف الـ documents يدوياً أو استخدم script
-
-### Script للاستيراد:
-
-```typescript
-import { IssuesService } from './services/firestoreService';
-
-const importData = async () => {
-  const storedData = localStorage.getItem('qms_issues');
-  if (!storedData) return;
-  
-  const issues = JSON.parse(storedData);
-  
-  for (const issue of issues) {
-    const { id, ...issueData } = issue;
-    await IssuesService.create(issueData);
-  }
-  
-  console.log(`تم استيراد ${issues.length} مشكلة`);
-};
-
-importData();
-```
-
----
-
-## 🎨 بدائل أخرى لقاعدة البيانات
-
-### 1. Supabase (بديل مفتوح المصدر لـ Firebase)
-
-**المميزات:**
-- PostgreSQL database
-- Real-time subscriptions
-- Authentication مدمج
-- مفتوح المصدر
-
-**التكامل:**
-```bash
-npm install @supabase/supabase-js
-```
-
-```typescript
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  'YOUR_SUPABASE_URL',
-  'YOUR_SUPABASE_KEY'
-);
-
-// استخدام مشابه لـ Firebase
-```
-
-### 2. Node.js + Express + MongoDB
-
-**للـ Backend كامل:**
+## 🔍 فحص القاعدة يدويًا
 
 ```bash
-npm install express mongoose cors
+sqlite3 server/seafood_qms.db
+.tables
+SELECT id, name, email, role FROM users;
+SELECT id, name, type FROM branches;
+.quit
 ```
 
-**مثال بسيط:**
+## 🚀 للترقية لقاعدة بيانات أكبر (PostgreSQL/MySQL)
 
-```javascript
-// server.js
-const express = require('express');
-const mongoose = require('mongoose');
-
-mongoose.connect('YOUR_MONGODB_URI');
-
-const IssueSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  branchId: String,
-  // ... rest of fields
-});
-
-const Issue = mongoose.model('Issue', IssueSchema);
-
-const app = express();
-app.use(express.json());
-
-app.get('/api/issues', async (req, res) => {
-  const issues = await Issue.find();
-  res.json(issues);
-});
-
-app.post('/api/issues', async (req, res) => {
-  const issue = new Issue(req.body);
-  await issue.save();
-  res.json(issue);
-});
-
-app.listen(3000);
-```
-
-### 3. AWS Amplify + DynamoDB
-
-**للـ Enterprise Solutions:**
-
-```bash
-npm install aws-amplify
-```
+SQLite كافي لحجم الاستخدام الحالي (فريق جودة واحد، عدد فروع محدود). لو الحجم كبر لدرجة تحتاج قاعدة بيانات منفصلة عن ملف السيرفر (تكرار السيرفر، نسخ متعددة، إلخ)، النقاط اللي لازم تتغيّر:
+1. استبدال `better-sqlite3` بمكتبة الاتصال المناسبة (`pg`, `mysql2`, ...)
+2. تحويل استعلامات `db.prepare(...).get/all/run` لصيغة async المكتبة الجديدة
+3. الحفاظ على `mapIssueRow()` كما هي - هي منفصلة عن نوع القاعدة تمامًا، بتتعامل مع أي object جاي بمفاتيح snake_case
 
 ---
 
-## 💡 نصائح للأداء
-
-### 1. Indexes
-
-في Firestore، أضف indexes للاستعلامات المعقدة:
-
-```javascript
-// Firestore Console > Indexes
-// مثال:
-// Collection: issues
-// Fields: branchId (Ascending), reportedAt (Descending)
-```
-
-### 2. Caching
-
-```typescript
-// DataContext.tsx
-const [cache, setCache] = useState<Map<string, Issue[]>>(new Map());
-
-const getCachedIssues = (key: string) => cache.get(key);
-const setCachedIssues = (key: string, issues: Issue[]) => {
-  setCache(prev => new Map(prev).set(key, issues));
-};
-```
-
-### 3. Pagination
-
-```typescript
-const getIssuesPaginated = async (
-  pageSize: number, 
-  lastDoc?: DocumentSnapshot
-) => {
-  let q = query(
-    collection(db, 'issues'),
-    orderBy('reportedAt', 'desc'),
-    limit(pageSize)
-  );
-  
-  if (lastDoc) {
-    q = query(q, startAfter(lastDoc));
-  }
-  
-  return await getDocs(q);
-};
-```
-
----
-
-## 🔍 استكشاف الأخطاء
-
-### المشكلة: "Firebase not configured"
-
-**الحل:**
-1. تأكد من تحديث `src/config/firebase.ts`
-2. تأكد من استبدال `YOUR_API_KEY` بالقيمة الحقيقية
-3. أعد تشغيل الـ dev server
-
-### المشكلة: "Missing or insufficient permissions"
-
-**الحل:**
-1. راجع Security Rules في Firebase Console
-2. للتطوير، استخدم rules مفتوحة
-3. للإنتاج، أضف Authentication
-
-### المشكلة: البيانات لا تظهر
-
-**الحل:**
-1. افتح Firebase Console > Firestore Database
-2. تأكد من وجود data في collections
-3. راجع Console في المتصفح للأخطاء
-
----
-
-## 📞 الدعم
-
-للمساعدة في إعداد قاعدة البيانات:
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [Firestore Guide](https://firebase.google.com/docs/firestore)
-
----
-
-**آخر تحديث:** 2024
+**Part of Seafood QMS - Quality Management System**

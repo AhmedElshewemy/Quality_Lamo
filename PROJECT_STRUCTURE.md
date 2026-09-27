@@ -7,26 +7,28 @@ seafood-qms/
 │
 ├── client/                    # Frontend (React + Vite)
 │   ├── src/                   # Source code
-│   │   ├── components/        # React components
+│   │   ├── components/        # React components (+ dashboard/ subfolder)
 │   │   ├── contexts/          # React contexts
-│   │   ├── pages/             # Page components
+│   │   ├── hooks/             # Shared data-fetching hooks
+│   │   ├── pages/             # Page components (lazy-loaded)
 │   │   ├── services/          # API services
-│   │   ├── utils/             # Utility functions
+│   │   ├── utils/             # labels.ts - shared labels/colors/icons
 │   │   ├── types/             # TypeScript types
-│   │   ├── validation/        # Validation schemas
 │   │   ├── App.tsx            # Main app component
 │   │   ├── main.tsx           # Entry point
 │   │   └── index.css          # Global styles
 │   ├── dist/                  # Build output (بعد الـ build)
 │   ├── index.html             # HTML entry
+│   ├── .env                   # VITE_API_URL
 │   ├── package.json           # Client dependencies
-│   ├── vite.config.js         # Vite configuration
+│   ├── vite.config.ts         # Vite configuration + dev API proxy
 │   └── tsconfig.json          # TypeScript config
 │
 ├── server/                    # Backend (Express + TypeScript)
 │   ├── src/                   # Source code
 │   │   └── index.ts           # Main server file
 │   ├── dist/                  # Compiled JavaScript (بعد الـ build)
+│   ├── .env                   # PORT, JWT_SECRET, DB_PATH, CLIENT_URL
 │   ├── package.json           # Server dependencies
 │   └── tsconfig.json          # TypeScript config
 │
@@ -141,21 +143,28 @@ npm start                # تشغيل الـ compiled server
 - React 18
 - TypeScript
 - Vite
-- Tailwind CSS
-- React Router
-- Recharts
-- jsPDF
+- Tailwind CSS 4
+- Recharts (charts - lazy-loaded)
+- jsPDF (PDF export - lazy-loaded)
+
+> لا يوجد router library (`react-router-dom` مش مستخدم) - التنقل بين الصفحات بـ React state بسيط (`currentPage` في `App.tsx`) وكل صفحة `React.lazy`-loaded.
 
 **الهيكل:**
 ```
 client/src/
-├── components/          # React components
-│   ├── Layout.tsx
-│   └── ErrorBoundary.tsx
+├── components/
+│   ├── Layout.tsx           # سايدبار متجاوب (drawer على الموبايل) + قائمة حسب الدور
+│   ├── ErrorBoundary.tsx
+│   └── dashboard/
+│       ├── DashboardCharts.tsx         # الرسوم البيانية (lazy-loaded من Dashboard.tsx)
+│       └── DashboardChartsSkeleton.tsx # placeholder وقت تحميل الرسوم
 ├── contexts/            # State management
 │   ├── AuthContext.tsx
 │   └── DataContext.tsx
-├── pages/               # Page components
+├── hooks/
+│   ├── useBranches.ts   # تحميل الفروع + branchName() لookup
+│   └── useUsers.ts      # تحميل المستخدمين + userName() lookup
+├── pages/               # كل صفحة lazy-loaded من App.tsx
 │   ├── Dashboard.tsx
 │   ├── Login.tsx
 │   ├── ReportIssue.tsx
@@ -165,17 +174,11 @@ client/src/
 │   └── Staff.tsx
 ├── services/            # API calls
 │   └── apiClient.ts
-├── utils/               # Utilities
-│   ├── logger.ts
-│   ├── errorHandler.ts
-│   ├── notifications.ts
-│   ├── performance.ts
-│   └── security.ts
-├── types/               # TypeScript types
+├── utils/
+│   └── labels.ts        # كل التسميات/الألوان/الأيقونات (حالة، أولوية، فئة، مطابقة، نوع فرع، دور) - مصدر واحد
+├── types/               # TypeScript types (Issue, Branch, User, PageId, ...)
 │   └── index.ts
-├── validation/          # Validation schemas
-│   └── schemas.ts
-├── App.tsx              # Main component
+├── App.tsx              # Main component + lazy() imports للصفحات
 ├── main.tsx             # Entry point
 └── index.css            # Global styles
 ```
@@ -185,11 +188,12 @@ client/src/
 ### Backend (server/)
 
 **التقنيات:**
-- Express.js
+- Express.js 5
 - TypeScript
 - better-sqlite3
 - JWT
 - bcryptjs
+- dotenv
 - Helmet
 - CORS
 - Rate Limiting
@@ -197,20 +201,26 @@ client/src/
 **الهيكل:**
 ```
 server/src/
-└── index.ts             # Main server file
-    ├── Configuration
-    ├── Middleware (Helmet, CORS, Rate Limiting)
-    ├── Database Setup (SQLite)
-    ├── Authentication (JWT)
-    ├── API Routes
-    │   ├── Auth Routes
-    │   ├── Issues Routes
-    │   ├── Branches Routes
-    │   ├── Users Routes
-    │   └── Stats Routes
-    ├── Static Files Serving (client/dist/)
-    └── Error Handling
+├── index.ts              # App bootstrap: middleware, mount routes, static serving, start
+├── config/
+│   └── index.ts           # PORT, JWT_SECRET, DB_PATH, CLIENT_DIST_PATH, ... (من .env)
+├── db/
+│   ├── index.ts           # Database connection + initDB() (تعريف الجداول والـ indexes)
+│   └── seed.ts             # seedInitialData() - بيانات تجريبية أول تشغيل
+├── middleware/
+│   └── auth.ts             # authenticateToken, requireRole، وتوسيع Express.Request
+├── routes/
+│   ├── auth.routes.ts      # POST /api/auth/login
+│   ├── issues.routes.ts    # GET/POST/PUT/DELETE /api/issues (DELETE محمي بـ requireRole)
+│   ├── branches.routes.ts  # GET /api/branches
+│   ├── users.routes.ts     # GET /api/users, /api/users/:id
+│   ├── stats.routes.ts     # GET /api/stats/issues
+│   └── health.routes.ts    # GET /api/health
+└── utils/
+    └── mapIssueRow.ts       # تحويل snake_case (DB) → camelCase (API response)
 ```
+
+> **ملحوظة ESM مهمة:** المشروع `"type": "module"`، فكل استيراد نسبي بين الملفات لازم يكون بامتداد `.js` صريح (`from '../db/index.js'`)، مش `from '../db'` - Node's native ESM resolver (على عكس bundler زي Vite) مبيحلّش الفولدرات لملف `index.js` تلقائيًا.
 
 ---
 
@@ -224,7 +234,9 @@ Vite Dev Server
     ↓
 React App
     ↓
-API Calls → http://localhost:3001/api/*
+API Calls → /api/*  (مسار نسبي، من VITE_API_URL)
+    ↓
+Vite proxy (vite.config.ts) → http://localhost:3001
     ↓
 Express Server (localhost:3001)
     ↓

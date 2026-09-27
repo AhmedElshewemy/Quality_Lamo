@@ -1,6 +1,8 @@
 # 🔒 الأمان وحماية البيانات
 
-## ⚠️ المشكلة الأمنية في النسخة الحالية
+## ⚠️ المشكلة الأمنية في النسخة الأولى (v1 - قبل الـ backend)
+
+> هذا القسم تاريخي: يوصف مشكلة النسخة الأولى (v1) اللي كانت بتخزن كل حاجة في `localStorage` بالمتصفح بدون أي سيرفر حقيقي. **النظام الحالي (v2) طبّق "الحل 1" تحت بالكامل - Backend حقيقي.** باقي الحلول (Firebase، Encryption) اتسيبت هنا للمرجعية بس، ومش مطبّقة ولا محتاجة تتطبّق.
 
 ### المشكلة:
 ```
@@ -31,18 +33,17 @@ localStorage.getItem('seafood_qms_db')
 
 ## ✅ الحلول المتاحة
 
-### الحل 1: Backend حقيقي (موصى به) ✅
+### الحل 1: Backend حقيقي (مطبَّق ✅)
 
 **الوصف:**
-نقل قاعدة البيانات للسيرفر، والـ frontend بيتكلم مع الـ backend عبر API.
+قاعدة البيانات على السيرفر، والـ frontend بيتكلم مع الـ backend عبر API فقط.
 
 **المميزات:**
 - ✅ البيانات على السيرفر (مش في المتصفح)
 - ✅ Authentication حقيقي (JWT)
-- ✅ Authorization checks
+- ✅ Authorization checks (بما فيها Role-Based Access Control)
 - ✅ Server-side validation
-- ✅ Audit logging
-- ✅ Secure password hashing
+- ✅ Secure password hashing (bcrypt)
 
 **البنية:**
 ```
@@ -69,20 +70,9 @@ localStorage.getItem('seafood_qms_db')
 └─────────────────┘
 ```
 
-**التنفيذ:**
-```bash
-# تثبيت الـ dependencies
-npm install express better-sqlite3 cors helmet express-rate-limit bcryptjs jsonwebtoken
-
-# تشغيل الـ backend
-node server/production-server.js
-
-# الـ frontend هيشتغل مع الـ backend تلقائياً
-```
-
-**الكود جاهز في:**
-- `server/production-server.js` - Backend كامل
-- `src/services/ProductionDatabaseService.ts` - Frontend service
+**الكود الفعلي:**
+- `server/src/index.ts` - كل منطق السيرفر (auth, routes, middleware)
+- `client/src/services/apiClient.ts` - عميل الـ API في الفرونت إند
 
 ---
 
@@ -149,23 +139,23 @@ service cloud.firestore {
 
 ---
 
-## 🚀 التنفيذ العملي
-
-### الخطوة 1: تشغيل الـ Backend
+## 🚀 طريقة التشغيل (النظام مبني بالفعل)
 
 ```bash
-# تثبيت الـ dependencies
-npm install express better-sqlite3 cors helmet express-rate-limit bcryptjs jsonwebtoken
+# تثبيت كل الـ dependencies (root + client + server)
+npm run install:all
 
-# تشغيل الـ backend
-node server/production-server.js
+# تطوير - Frontend و Backend مع بعض
+npm run dev
+
+# إنتاج
+npm run build
+npm start
 ```
 
-### الخطوة 2: تعديل الـ Frontend
+راجع `README.md` و `RUNNING.md` للتفاصيل الكاملة والإعدادات (`server/.env`, `client/.env`).
 
-الـ frontend هيشتغل مع الـ backend تلقائياً لو الـ backend شغال.
-
-### الخطوة 3: التحقق من الأمان
+### التحقق من الأمان
 
 ```bash
 # جرب تفتح F12 Console
@@ -209,6 +199,13 @@ Headers: {
 // لو token غلط → 403 Forbidden
 ```
 
+**Role-Based Access Control:** middleware إضافي (`requireRole(...roles)`) بيقيّد بعض الـ endpoints بدور معيّن، بغض النظر عن أي تحقق في الواجهة. مثال حقيقي من الكود:
+```ts
+app.delete('/api/issues/:id', authenticateToken, requireRole('admin', 'quality_manager'), (req, res) => {
+  // مهندس الجودة (quality_engineer) هياخد 403 حتى لو نادى الـ API مباشرة
+});
+```
+
 ### 3. Server-side Validation
 ```javascript
 // Backend يتحقق من البيانات
@@ -234,6 +231,12 @@ app.use(helmet());
 // X-Content-Type-Options
 // X-Frame-Options
 // ...
+```
+
+### 6. JSON Payload Limit
+```javascript
+// 25mb - كافي لكذا صورة (base64) في تقرير مشكلة واحد
+app.use(express.json({ limit: '25mb' }));
 ```
 
 ---
@@ -266,7 +269,6 @@ app.use(helmet());
 │  - Users (hashed passwords)             │
 │  - Issues                               │
 │  - Branches                             │
-│  - Audit Logs                           │
 └─────────────────────────────────────────┘
 ```
 
@@ -274,17 +276,21 @@ app.use(helmet());
 
 ## ✅ Checklist للإنتاج
 
-### Backend:
+### Backend (مطبَّق):
 - [x] Authentication (JWT)
-- [x] Authorization checks
+- [x] Authorization checks (بما فيها RBAC عبر `requireRole`)
 - [x] Input validation
-- [x] SQL injection prevention
+- [x] SQL injection prevention (parameterized queries)
 - [x] Rate limiting
 - [x] Security headers (Helmet)
 - [x] CORS configuration
 - [x] Password hashing (bcrypt)
-- [x] Error handling
-- [x] Logging
+- [x] Error handling (try/catch على كل route + `console.error`)
+
+### Backend (لسه مش مطبَّق - قبل إنتاج حقيقي):
+- [ ] Structured/persistent logging (حاليًا `console.log`/`console.error` بس، بتضيع لو السيرفر أعيد تشغيله بدون log aggregation)
+- [ ] Automated backup strategy لملف SQLite
+- [ ] Refresh tokens / password reset flow (راجع `AUTH_GUIDE.md`)
 
 ### Frontend:
 - [x] Token storage (sessionStorage)
@@ -295,10 +301,9 @@ app.use(helmet());
 
 ### Database:
 - [x] SQLite on server
-- [x] Foreign keys
-- [x] Indexes
-- [x] Transactions
-- [x] Backup strategy
+- [x] Foreign keys (`branch_id`, `reported_by`, `assigned_to`)
+- [x] Indexes (`branch_id`, `status`, `reported_at`, `reported_by` على جدول `issues`)
+- [ ] Automated backup strategy (راجع `DATABASE_GUIDE.md`)
 
 ---
 
@@ -318,23 +323,13 @@ app.use(helmet());
 
 ## 📞 التنفيذ
 
-### لو عايز النسخة الآمنة:
-
 ```bash
-# 1. شغل الـ backend
-node server/production-server.js
-
-# 2. شغل الـ frontend
-npm run dev
-
-# 3. افتح المتصفح
-# هتلاقي النظام شغال مع backend
-# البيانات محمية! ✅
+npm run dev      # تطوير
+npm run build && npm start   # إنتاج
 ```
 
 ### لو عايز مساعدة:
-- راجع `server/production-server.js`
-- راجع `src/services/ProductionDatabaseService.ts`
+- راجع `server/src/index.ts`
 - راجع `DEPLOYMENT.md`
 
 ---

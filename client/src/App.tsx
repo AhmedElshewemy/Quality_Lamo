@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import Login from './pages/Login';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import ReportIssue from './pages/ReportIssue';
-import IssuesList from './pages/IssuesList';
-import Reports from './pages/Reports';
-import Branches from './pages/Branches';
-import Staff from './pages/Staff';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
+import { PageId } from './types';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ReportIssue = lazy(() => import('./pages/ReportIssue'));
+const IssuesList = lazy(() => import('./pages/IssuesList'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Branches = lazy(() => import('./pages/Branches'));
+const Staff = lazy(() => import('./pages/Staff'));
+
+const PageLoader: React.FC = () => (
+  <div className="flex items-center justify-center h-64">
+    <p className="text-gray-400 text-sm">جاري التحميل...</p>
+  </div>
+);
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, currentUser } = useAuth();
-  const [currentPage, setCurrentPage] = useState('dashboard');
-
-  useEffect(() => {
-    if (currentUser) {
-      console.log('User logged in:', currentUser.name);
-    }
-  }, [currentUser]);
+  const { isAuthenticated } = useAuth();
+  const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
 
   if (!isAuthenticated) {
     return <Login />;
@@ -50,7 +52,7 @@ const AppContent: React.FC = () => {
   return (
     <>
       <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-        {renderPage()}
+        <Suspense fallback={<PageLoader />}>{renderPage()}</Suspense>
       </Layout>
       <Toaster
         position="top-center"

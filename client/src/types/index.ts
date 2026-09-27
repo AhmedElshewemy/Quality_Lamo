@@ -8,11 +8,13 @@ export interface User {
   branch?: string;
 }
 
+export type BranchType = 'branch' | 'central_kitchen_warehouse';
+
 export type Branch = {
   id: string;
   name: string;
   location: string;
-  type: 'branch' | 'headquarters' | 'central_kitchen' | 'main_warehouse';
+  type: BranchType;
 };
 
 export type ComplianceStatus = 'compliant' | 'partially_compliant' | 'non_compliant';
@@ -50,3 +52,12 @@ export interface Issue {
   assignedTo?: string;
   followUpDate?: string;
 }
+
+export type PageId =
+  | 'dashboard'
+  | 'report-issue'
+  | 'my-issues'
+  | 'all-issues'
+  | 'reports'
+  | 'branches'
+  | 'staff';

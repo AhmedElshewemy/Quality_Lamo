@@ -2,209 +2,58 @@
 
 ## 📋 نظرة عامة
 
-المشروع مبني بأحدث التقنيات والـ frameworks لضمان:
-- ✅ أداء عالي
-- ✅ سهولة الصيانة
-- ✅ قابلية التوسع
-- ✅ أمان متقدم
-- ✅ تجربة مستخدم ممتازة
+المشروع مبني بتقنيات حقيقية ومطبَّقة بالفعل - كل قسم هنا يوصف كود موجود فعليًا في المستودع، مش خيارات نظرية أو مقترحة.
 
 ---
 
 ## 🎨 Frontend Technologies
 
-### 1️⃣ React 18
-**الإصدار:** 18.x  
-**النوع:** UI Library  
-**الموقع:** `package.json`
+### React 18
+**الموقع:** `client/package.json`
 
-**الوصف:**
-مكتبة JavaScript لبناء واجهات المستخدم التفاعلية.
+مكتبة JavaScript لبناء واجهات المستخدم. مستخدمة بـ Functional Components + Hooks (`useState`, `useEffect`, `useMemo`, `useContext`) و Context API (`AuthContext`, `DataContext`) و `React.lazy` + `Suspense` للتحميل المؤجل لكل صفحة (راجع قسم الأداء تحت).
 
-**ليه اخترناها؟**
-- ✅ Community كبير ودعم ممتاز
-- ✅ Virtual DOM للأداء العالي
-- ✅ Component-based architecture
-- ✅ Hooks للـ State Management
-- ✅ Concurrent features في React 18
+### TypeScript
+**الموقع:** `client/tsconfig.json`, `server/tsconfig.json`
 
-**الاستخدام في المشروع:**
+`strict: true` في الاتنين، مع `noUnusedLocals` و `noUnusedParameters` مفعّلين - أي import أو متغير مش مستخدم يفشّل الـ build عمدًا، عشان الكود يفضل نظيف.
+
+### Vite
+**الموقع:** `client/vite.config.ts`
+
+Build tool للفرونت إند. فيه `server.proxy` بيحوّل `/api/*` لـ `http://localhost:3001` وقت التطوير - ده اللي يخلي `VITE_API_URL=/api` (نسبي) يشتغل صحيح في التطوير والإنتاج مع بعض (راجع `README.md` → قسم الإعدادات).
+
+### Tailwind CSS 4
+**الموقع:** `client/postcss.config.js`, `client/src/index.css`
+
+Utility-first CSS. النسخة 4 بتستخدم `@import "tailwindcss";` في `index.css` بدل الـ `@tailwind base/components/utilities` القديمة، وplugin الـ PostCSS الخاص بيها (`@tailwindcss/postcss`) - لازم يكون متطابق مع نسخة `tailwindcss` نفسها في `package.json`، وإلا الـ build بيفشل بخطأ "Cannot find module '@tailwindcss/postcss'".
+
+### التنقل بين الصفحات (بدون router library)
+
+مفيش `react-router-dom` ولا أي مكتبة routing في المشروع. التنقل بـ React state بسيط في `client/src/App.tsx`:
 ```typescript
-// Components
-const Dashboard: React.FC = () => {
-  const [issues, setIssues] = useState<Issue[]>([]);
-  
-  useEffect(() => {
-    // Fetch data
-  }, []);
-  
-  return <div>...</div>;
-};
-```
-
-**المميزات المستخدمة:**
-- ✅ Functional Components
-- ✅ Hooks (useState, useEffect, useContext)
-- ✅ Context API
-- ✅ Suspense & Error Boundaries
-- ✅ Concurrent Features
-
----
-
-### 2️⃣ TypeScript
-**الإصدار:** 5.x  
-**النوع:** Programming Language  
-**الموقع:** `tsconfig.json`
-
-**الوصف:**
-لغة برمجة مبنية على JavaScript تضيف Type Safety.
-
-**ليه اخترناها؟**
-- ✅ Type Safety - أخطاء أقل
-- ✅ Better IDE Support
-- ✅ Self-documenting code
-- ✅ Refactoring أسهل
-- ✅ Catch errors في وقت التطوير
-
-**الاستخدام في المشروع:**
-```typescript
-// Type Definitions
-interface Issue {
-  id: string;
-  title: string;
-  description: string;
-  branchId: string;
-  category: IssueCategory;
-  priority: IssuePriority;
-  status: IssueStatus;
-  complianceStatus: ComplianceStatus;
-  images: string[];
-  reportedBy: string;
-  reportedAt: string;
-  // ...
-}
-
-// Type-safe functions
-const getIssuesByBranch = (branchId: string): Issue[] => {
-  return issues.filter(issue => issue.branchId === branchId);
-};
-```
-
----
-
-### 3️⃣ Vite
-**الإصدار:** 5.x  
-**النوع:** Build Tool  
-**الموقع:** `vite.config.ts`
-
-**الوصف:**
-Build tool سريع جداً للتطبيقات الحديثة.
-
-**ليه اخترناها؟**
-- ✅ أسرع بـ 10-100x من Webpack
-- ✅ Hot Module Replacement (HMR) فوري
-- ✅ Optimized build للإنتاج
-- ✅ Support لـ TypeScript, JSX
-- ✅ Configuration بسيطة
-
-**الأوامر:**
-```bash
-npm run dev      # تشغيل السيرفر التطويري
-npm run build    # بناء النسخة النهائية
-npm run preview  # معاينة النسخة النهائية
-```
-
----
-
-### 4️⃣ Tailwind CSS
-**الإصدار:** 3.x  
-**النوع:** CSS Framework  
-**الموقع:** `src/index.css`
-
-**الوصف:**
-Utility-first CSS framework للتصميم السريع.
-
-**ليه اخترناها؟**
-- ✅ تصميم سريع بدون كتابة CSS
-- ✅ Consistent design system
-- ✅ Responsive design مدمج
-- ✅ Dark mode support
-- ✅ PurgeCSS للأداء
-
-**الاستخدام في المشروع:**
-```tsx
-<div className="flex items-center justify-between p-6 bg-white rounded-xl shadow-sm">
-  <h1 className="text-2xl font-bold text-gray-800">
-    لوحة التحكم
-  </h1>
-  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-    إضافة مشكلة
-  </button>
-</div>
-```
-
-**المميزات المستخدمة:**
-- ✅ Flexbox & Grid
-- ✅ Spacing (p-6, m-4)
-- ✅ Colors (bg-blue-600, text-gray-800)
-- ✅ Typography (text-2xl, font-bold)
-- ✅ Responsive (md:, lg:)
-- ✅ Hover states
-- ✅ Shadows & Borders
-
----
-
-### 5️⃣ React Router DOM
-**الإصدار:** 6.x  
-**النوع:** Routing Library  
-**الموقع:** `src/App.tsx`
-
-**الوصف:**
-مكتبة لإدارة الـ Routing في React.
-
-**ليه اخترناها؟**
-- ✅ Declarative routing
-- ✅ Nested routes
-- ✅ Dynamic routes
-- ✅ Navigation guards
-- ✅ Standard في React ecosystem
-
-**الاستخدام في المشروع:**
-```typescript
-// Navigation
-const [currentPage, setCurrentPage] = useState('dashboard');
+const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
 
 const renderPage = () => {
   switch (currentPage) {
-    case 'dashboard':
-      return <Dashboard />;
-    case 'report-issue':
-      return <ReportIssue />;
+    case 'dashboard': return <Dashboard />;
+    case 'report-issue': return <ReportIssue />;
     // ...
   }
 };
 ```
+`PageId` (في `client/src/types/index.ts`) هو union type لكل الصفحات الممكنة، فأي اسم صفحة غلط بيبوّظ الـ TypeScript build فورًا بدل ما يبان باج وقت التشغيل.
 
 ---
 
 ## 📊 Data Visualization
 
-### 6️⃣ Recharts
-**الإصدار:** 2.x  
-**النوع:** Charting Library  
-**الموقع:** `src/pages/Dashboard.tsx`
+### Recharts
+**الإصدار المثبَّت:** `^2.15.4`
+**الموقع:** `client/src/components/dashboard/DashboardCharts.tsx`, `client/src/pages/Reports.tsx`
 
-**الوصف:**
-مكتبة React لبناء الرسوم البيانية.
+الرسوم المستخدمة فعليًا: `LineChart` (اتجاه المشاكل عبر الوقت)، `PieChart` (نسبة المطابقة)، `BarChart` (أداء الفروع، توزيع الفئات). مفيش `AreaChart` مستخدم.
 
-**ليه اخترناها؟**
-- ✅ مبنية على D3.js
-- ✅ React components
-- ✅ Responsive charts
-- ✅ Animations مدمجة
-- ✅ سهلة الاستخدام
-
-**الاستخدام في المشروع:**
 ```typescript
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -217,255 +66,88 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 </BarChart>
 ```
 
-**الرسوم البيانية المستخدمة:**
-- ✅ Bar Charts (أعمدة)
-- ✅ Line Charts (خطوط)
-- ✅ Pie Charts (دائرية)
-- ✅ Area Charts (مساحات)
+**ملاحظة أداء مهمة:** `Dashboard.tsx` نفسه **لا يستورد** `recharts` مباشرة. الرسوم معزولة في `DashboardCharts.tsx` ومحمّلة بـ `React.lazy` جوه `Suspense` منفصل داخل الصفحة - كروت الإحصائيات والجدول بيظهروا فورًا، والرسوم تتحمّل في الخلفية بعد كده. راجع قسم الأداء تحت.
 
 ---
 
-## 📝 Forms & Validation
+## ✅ الفورمات (بدون مكتبة validation)
 
-### 7️⃣ React Hook Form
-**الإصدار:** 7.x  
-**النوع:** Form Library  
-**الموقع:** `src/pages/ReportIssue.tsx`
+**الموقع:** `client/src/pages/ReportIssue.tsx`
 
-**الوصف:**
-مكتبة لإدارة الفورمات بأداء عالي.
-
-**ليه اخترناها؟**
-- ✅ Performance عالي (minimal re-renders)
-- ✅ Easy validation integration
-- ✅ Small bundle size
-- ✅ TypeScript support
-- ✅ Less boilerplate
-
-**الاستخدام في المشروع:**
+مفيش `react-hook-form` ولا `zod` ولا أي مكتبة تحقق. الفورم مبني بـ `useState` عادي، والتحقق (`isFormValid`) عبارة عن شرط بسيط بيتأكد إن الحقول المطلوبة مليانة قبل تفعيل زرار الإرسال:
 ```typescript
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { issueSchema } from '../validation/schemas';
-
-const { register, handleSubmit, formState: { errors } } = useForm({
-  resolver: zodResolver(issueSchema),
-});
-
-<form onSubmit={handleSubmit(onSubmit)}>
-  <input {...register('title')} />
-  {errors.title && <span>{errors.title.message}</span>}
-</form>
+const isFormValid =
+  formData.title.trim() &&
+  formData.description.trim() &&
+  formData.branchId &&
+  formData.category &&
+  formData.priority &&
+  formData.complianceStatus;
 ```
-
----
-
-### 8️⃣ Zod
-**الإصدار:** 3.x  
-**النوع:** Validation Library  
-**الموقع:** `src/validation/schemas.ts`
-
-**الوصف:**
-TypeScript-first schema validation.
-
-**ليه اخترناها؟**
-- ✅ TypeScript integration ممتاز
-- ✅ Runtime validation
-- ✅ Type inference
-- ✅ Composable schemas
-- ✅ Error messages مخصصة
-
-**الاستخدام في المشروع:**
-```typescript
-import { z } from 'zod';
-
-export const issueSchema = z.object({
-  title: z.string()
-    .min(5, 'العنوان يجب أن يكون 5 أحرف على الأقل')
-    .max(200, 'العنوان يجب أن يكون أقل من 200 حرف'),
-  
-  description: z.string()
-    .min(10, 'الوصف يجب أن يكون 10 أحرف على الأقل'),
-  
-  category: z.enum([
-    'food_safety',
-    'hygiene',
-    'equipment',
-    // ...
-  ]),
-  
-  priority: z.enum(['low', 'medium', 'high', 'critical']),
-});
-
-// Validation
-const result = issueSchema.safeParse(data);
-if (result.success) {
-  // Valid data
-} else {
-  // Errors
-  console.log(result.error);
-}
-```
+التحقق الحقيقي من نوع البيانات (مطلوب/مفيش، أنواع enum صحيحة) بيحصل تاني على السيرفر (`server/src/routes/issues.routes.ts`) قبل الحفظ في قاعدة البيانات.
 
 ---
 
 ## 📄 PDF Generation
 
-### 9️⃣ jsPDF
-**الإصدار:** 2.x  
-**النوع:** PDF Library  
-**الموقع:** `src/pages/Reports.tsx`
+### jsPDF + jspdf-autotable
+**الإصدار المثبَّت:** `jspdf ^4.2.1`, `jspdf-autotable ^5.0.8`
+**الموقع:** `client/src/pages/Reports.tsx`
 
-**الوصف:**
-مكتبة لإنشاء ملفات PDF في المتصفح.
-
-**ليه اخترناها؟**
-- ✅ تعمل في المتصفح
-- ✅ لا تحتاج سيرفر
-- ✅ Support للعربي
-- ✅ Tables support
-- ✅ Images support
-
-**الاستخدام في المشروع:**
 ```typescript
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
-const generatePDF = () => {
+const generatePDF = async () => {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
   const doc = new jsPDF();
-  
-  // Title
-  doc.setFontSize(20);
-  doc.text('تقرير الجودة', 105, 20, { align: 'center' });
-  
-  // Table
+  doc.text('Seafood Restaurant - Quality Report', 105, 20, { align: 'center' });
   autoTable(doc, {
-    startY: 30,
-    head: [['الفرع', 'عدد المشاكل', 'نسبة المطابقة']],
-    body: branchData.map(b => [b.name, b.total, `${b.complianceRate}%`]),
+    head: [['Branch', 'Total Issues', 'Compliance Rate']],
+    body: branchData.map((b) => [b.name, b.total, `${b.complianceRate}%`]),
   });
-  
-  // Save
   doc.save('quality-report.pdf');
 };
 ```
 
----
+⚠️ **مهم:** خطوط jsPDF المدمجة **مبتدعمش العربي**. التقرير المُصدَّر PDF بعناوين وتسميات إنجليزية عمدًا، حتى إن واجهة الموقع نفسها بالعربي بالكامل. لو محتاج PDF بالعربي، الحل هو تضمين خط عربي (TTF) في jsPDF - ده لسه مش متطبّق.
 
-### 🔟 jspdf-autotable
-**الإصدار:** 3.x  
-**النوع:** jsPDF Plugin  
-**الموقع:** `src/pages/Reports.tsx`
-
-**الوصف:**
-Plugin لـ jsPDF لإنشاء جداول في PDF.
-
-**المميزات:**
-- ✅ Auto column sizing
-- ✅ Styling options
-- ✅ Multi-page tables
-- ✅ Headers & footers
+**تحميل مؤجل:** المكتبتين ديل (~260KB مع تبعياتهم `html2canvas` و `dompurify`) بيتحمّلوا بـ dynamic `import()` **جوه** دالة `generatePDF`، مش في أول الملف - يعني حتى لو المستخدم فتح صفحة التقارير، المكتبات ديل ما بتتحمّلش إلا لو دوس "تصدير PDF" فعليًا.
 
 ---
 
-## 🎨 Icons & UI
+## 🎨 Icons & Notifications
 
-### 1️⃣1️⃣ Lucide React
-**الإصدار:** 0.x  
-**النوع:** Icon Library  
-**الموقع:** `src/components/Layout.tsx`
+### Lucide React
+**الموقع:** `client/src/components/Layout.tsx` وكل صفحة
 
-**الوصف:**
-مكتبة أيقونات جميلة وخفيفة.
-
-**ليه اخترناها؟**
-- ✅ Tree-shakeable (حجم صغير)
-- ✅ Consistent style
-- ✅ SVG icons
-- ✅ Customizable
-- ✅ TypeScript support
-
-**الاستخدام في المشروع:**
 ```typescript
-import { 
-  LayoutDashboard, 
-  FileText, 
-  PlusCircle, 
-  List, 
-  LogOut,
-  Fish,
-  Building2,
-  Users
-} from 'lucide-react';
-
+import { LayoutDashboard, FileText, PlusCircle } from 'lucide-react';
 <LayoutDashboard className="w-5 h-5" />
 ```
 
----
-
-## 🔔 Notifications
-
-### 1️⃣2️⃣ React Hot Toast
-**الإصدار:** 2.x  
-**النوع:** Notification Library  
-**الموقع:** `src/utils/notifications.ts`
-
-**الوصف:**
-مكتبة لإظهار إشعارات جميلة.
-
-**ليه اخترناها؟**
-- ✅ Easy to use
-- ✅ Customizable
-- ✅ Promise support
-- ✅ RTL support
-- ✅ Lightweight
-
-**الاستخدام في المشروع:**
-```typescript
-import toast, { Toaster } from 'react-hot-toast';
-
-// Success
-toast.success('تم تسجيل المشكلة بنجاح');
-
-// Error
-toast.error('فشل تسجيل الدخول');
-
-// Promise
-toast.promise(
-  apiCall(),
-  {
-    loading: 'جاري التحميل...',
-    success: 'تم بنجاح',
-    error: 'حدث خطأ',
-  }
-);
-```
+### React Hot Toast
+**الموقع:** `client/src/App.tsx` (`<Toaster />`)، مستخدم في كل الصفحات اللي فيها إجراءات (`ReportIssue`, `IssuesList`) لإشعارات النجاح/الفشل بدل رسائل ثابتة في الصفحة.
 
 ---
 
 ## 🛡️ Error Handling
 
-### 1️⃣3️⃣ React Error Boundary
-**النوع:** Error Handling Component  
-**الموقع:** `src/components/ErrorBoundary.tsx`
+### Error Boundary (React أصلي، بدون مكتبة)
+**الموقع:** `client/src/components/ErrorBoundary.tsx`
 
-**الوصف:**
-Component للتعامل مع أخطاء React.
-
-**الاستخدام في المشروع:**
+Class component عادي باستخدام واجهة React المدمجة (`getDerivedStateFromError`, `componentDidCatch`) - مفيش مكتبة `react-error-boundary` أو أي حاجة خارجية:
 ```typescript
 class ErrorBoundary extends Component<Props, State> {
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
+  static getDerivedStateFromError(_: Error): State {
+    return { hasError: true };
   }
-  
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error('Error caught', error);
+    console.error('Error caught by boundary:', error, errorInfo);
   }
-  
   render() {
     if (this.state.hasError) {
-      return <FallbackUI />;
+      return <div>حدث خطأ - <button onClick={() => window.location.reload()}>إعادة تحميل</button></div>;
     }
     return this.props.children;
   }
@@ -476,333 +158,111 @@ class ErrorBoundary extends Component<Props, State> {
 
 ## 💾 Database
 
-### 1️⃣4️⃣ sql.js
-**الإصدار:** 1.x  
-**النوع:** SQLite for Browser  
-**الموقع:** `src/database/connection.ts`
+### better-sqlite3
+**الموقع:** `server/src/db/index.ts`
 
-**الوصف:**
-SQLite compiled to WebAssembly - يشتغل في المتصفح.
-
-**ليه اخترناها؟**
-- ✅ SQLite كامل في المتصفح
-- ✅ SQL queries حقيقية
-- ✅ Indexes & transactions
-- ✅ No server needed
-- ✅ Data persistence
-
-**الاستخدام في المشروع:**
+SQLite حقيقي على السيرفر (Node.js)، **مش** في المتصفح. مفيش `sql.js` ومفيش Firebase/Firestore في المشروع - راجع `DATABASE_GUIDE.md` للتفاصيل الكاملة (الجداول، الـ seeding، إلخ).
 ```typescript
-import initSqlJs, { Database } from 'sql.js';
+import Database from 'better-sqlite3';
+const db = new Database(DB_PATH);
 
-// Initialize
-const SQL = await initSqlJs({
-  locateFile: (file) => `https://sql.js.org/dist/${file}`,
-});
-
-const db = new SQL.Database();
-
-// Execute SQL
-db.run(`
-  CREATE TABLE issues (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL
-  )
-`);
-
-// Query
-const results = db.exec('SELECT * FROM issues');
+const issues = db.prepare('SELECT * FROM issues WHERE status = ?').all('open');
+db.prepare('INSERT INTO issues (title, description) VALUES (?, ?)').run('عنوان', 'وصف');
 ```
 
 ---
 
 ## 🔐 Authentication & Backend
 
-### 1️⃣5️⃣ Firebase (Optional)
-**النوع:** Backend as a Service  
-**الموقع:** `src/config/firebase.ts`
+### Express.js 5
+**الموقع:** `server/src/index.ts` (bootstrap) + `server/src/routes/*.ts`
 
-**الخدمات المستخدمة:**
-- ✅ **Firebase Auth** - المصادقة
-- ✅ **Firestore** - قاعدة بيانات سحابية
-- ✅ **Storage** - رفع الملفات
-
-**ليه اخترناها؟**
-- ✅ Easy setup
-- ✅ Real-time updates
-- ✅ Scalable
-- ✅ Free tier generous
-- ✅ Google infrastructure
-
-**الاستخدام في المشروع:**
 ```typescript
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-```
-
----
-
-### 1️⃣6️⃣ Express.js (Backend)
-**الإصدار:** 4.x  
-**النوع:** Web Framework  
-**الموقع:** `server/index.js`
-
-**الوصف:**
-Web framework لـ Node.js.
-
-**ليه اخترناها؟**
-- ✅ Simple & flexible
-- ✅ Large ecosystem
-- ✅ Middleware support
-- ✅ RESTful APIs
-- ✅ Production ready
-
-**الاستخدام في المشروع:**
-```javascript
-const express = require('express');
+import express from 'express';
 const app = express();
-
-// Middleware
 app.use(express.json());
-app.use(cors());
-app.use(helmet());
-
-// Routes
-app.get('/api/issues', (req, res) => {
-  const issues = db.prepare('SELECT * FROM issues').all();
-  res.json(issues);
-});
-
-app.post('/api/issues', (req, res) => {
-  const { title, description } = req.body;
-  // Create issue
-  res.status(201).json({ id: '...' });
-});
+app.use('/api/issues', issuesRoutes);
 ```
+> Express 5 بيستخدم `path-to-regexp` v7، اللي بطّلت تدعم الصيغة القديمة لـ wildcard route (`app.get('*', ...)`). الصيغة الصحيحة المستخدمة هنا: `app.get('/*splat', ...)` (لخدمة صفحة الـ SPA لأي route غير API).
 
----
+### dotenv
+**الموقع:** أول سطر في `server/src/index.ts`
 
-### 1️⃣7️⃣ better-sqlite3 (Backend)
-**الإصدار:** 9.x  
-**النوع:** SQLite for Node.js  
-**الموقع:** `server/index.js`
-
-**الوصف:**
-SQLite driver لـ Node.js (أسرع من sqlite3).
-
-**ليه اخترناها؟**
-- ✅ Fast & synchronous
-- ✅ Full SQL support
-- ✅ Transactions
-- ✅ Prepared statements
-- ✅ Production ready
-
-**الاستخدام في المشروع:**
-```javascript
-const Database = require('better-sqlite3');
-const db = new Database('seafood_qms.db');
-
-// Query
-const issues = db.prepare('SELECT * FROM issues WHERE status = ?').all('open');
-
-// Insert
-db.prepare('INSERT INTO issues (title, description) VALUES (?, ?)')
-  .run('New Issue', 'Description');
+```typescript
+import 'dotenv/config';   // لازم يكون أول import في الملف
 ```
+بيحمّل `server/.env` في `process.env`. بدونه، أي تعديل في `.env` (زي `PORT`) بيتكتب بس من غير أي تأثير فعلي.
 
----
+### JWT (jsonwebtoken)
+**الموقع:** `server/src/routes/auth.routes.ts`, `server/src/middleware/auth.ts`
 
-### 1️⃣8️⃣ JWT (JSON Web Tokens)
-**النوع:** Authentication Method  
-**الموقع:** `server/index.js`
+```typescript
+const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 
-**الوصف:**
-Token-based authentication.
-
-**الاستخدام في المشروع:**
-```javascript
-const jwt = require('jsonwebtoken');
-
-// Generate token
-const token = jwt.sign(
-  { id: user.id, email: user.email, role: user.role },
-  JWT_SECRET,
-  { expiresIn: '24h' }
-);
-
-// Verify token
-jwt.verify(token, JWT_SECRET, (err, decoded) => {
-  if (err) return res.status(403).json({ error: 'Invalid token' });
-  req.user = decoded;
+jwt.verify(token, JWT_SECRET, (err, user) => {
+  if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+  req.user = user;
 });
 ```
 
----
+### Role-Based Access Control (middleware مخصّص)
+**الموقع:** `server/src/middleware/auth.ts`
 
-## 🔒 Security
+```typescript
+export const requireRole = (...roles: string[]) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  next();
+};
 
-### 1️⃣9️⃣ Helmet
-**النوع:** Security Middleware  
-**الموقع:** `server/index.js`
-
-**الوصف:**
-Secure HTTP headers.
-
-**الاستخدام:**
-```javascript
-const helmet = require('helmet');
-app.use(helmet());
+// الاستخدام: حذف مشكلة محصور في admin/quality_manager
+app.delete('/api/issues/:id', authenticateToken, requireRole('admin', 'quality_manager'), handler);
 ```
 
-**يضيف:**
-- ✅ Content-Security-Policy
-- ✅ X-Content-Type-Options
-- ✅ X-Frame-Options
-- ✅ Strict-Transport-Security
+### bcryptjs
+**الموقع:** `server/src/db/seed.ts`, `server/src/routes/auth.routes.ts`
+
+```typescript
+const passwordHash = bcrypt.hashSync(password, 10);
+const validPassword = bcrypt.compareSync(password, user.password_hash);
+```
+> الاستخدام هنا **synchronous** (`hashSync`/`compareSync`) مش async - مناسب لحجم السيرفر الحالي (SQLite + طلبات محدودة)، لو الحمل كبر يستحق التحويل لـ async.
 
 ---
 
-### 2️⃣0️⃣ CORS
-**النوع:** Security Middleware  
-**الموقع:** `server/index.js`
+## 🔒 Security Middleware
 
-**الوصف:**
-Cross-Origin Resource Sharing.
-
-**الاستخدام:**
-```javascript
-const cors = require('cors');
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
+### Helmet
+```typescript
+app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] /* ... */ } } }));
 ```
 
----
+### CORS
+```typescript
+app.use(cors({ origin: CLIENT_URL, credentials: true }));
+```
 
-### 2️⃣1️⃣ express-rate-limit
-**النوع:** Rate Limiting  
-**الموقع:** `server/index.js`
-
-**الوصف:**
-Limit repeated requests.
-
-**الاستخدام:**
-```javascript
-const rateLimit = require('express-rate-limit');
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests
-  message: 'Too many requests',
-});
+### express-rate-limit
+```typescript
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use('/api/', limiter);
 ```
 
----
-
-### 2️⃣2️⃣ bcryptjs
-**النوع:** Password Hashing  
-**الموقع:** `server/index.js`
-
-**الوصف:**
-Hash passwords securely.
-
-**الاستخدام:**
-```javascript
-const bcrypt = require('bcryptjs');
-
-// Hash password
-const hash = await bcrypt.hash(password, 10);
-
-// Verify password
-const valid = await bcrypt.compare(password, hash);
+### JSON Payload Limit
+```typescript
+app.use(express.json({ limit: '25mb' }));  // كافي لكذا صورة base64 في تقرير مشكلة واحد
 ```
 
----
-
-## 🐳 Deployment
-
-### 2️⃣3️⃣ Docker
-**النوع:** Containerization  
-**الموقع:** `Dockerfile`
-
-**الوصف:**
-Container platform للتطبيقات.
-
-**ليه اخترناها؟**
-- ✅ Consistent environments
-- ✅ Easy deployment
-- ✅ Scalable
-- ✅ Isolated processes
-- ✅ Version control
-
-**الاستخدام في المشروع:**
-```dockerfile
-# Multi-stage build
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Production stage
-FROM node:18-alpine
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY server/ ./server/
-EXPOSE 3001
-CMD ["node", "server/index.js"]
-```
-
----
-
-### 2️⃣4️⃣ Docker Compose
-**النوع:** Orchestration  
-**الموقع:** `docker-compose.yml`
-
-**الوصف:**
-Multi-container Docker applications.
-
-**الاستخدام في المشروع:**
-```yaml
-version: '3.8'
-services:
-  app:
-    build: .
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-    volumes:
-      - app-data:/app/data
-    restart: unless-stopped
-```
+كل التفاصيل دي متوزعة على ملفات `server/src/index.ts` (bootstrap) و middleware مخصص - راجع `PROJECT_STRUCTURE.md` لخريطة الملفات كاملة.
 
 ---
 
 ## 📦 Package Management
 
-### 2️⃣5️⃣ npm
-**النوع:** Package Manager  
-**الموقع:** `package.json`
+### 3 ملفات package.json مستقلة (بدون npm workspaces حقيقية)
 
-**الوصف:**
-Node package manager.
-
-**الأوامر المستخدمة:**
-```bash
-npm install          # تثبيت الـ dependencies
-npm run dev          # تشغيل السيرفر التطويري
-npm run build        # بناء النسخة النهائية
-npm run preview      # معاينة النسخة النهائية
-```
+المشروع فيه root، `client/`، و `server/` - كل واحد بملف `package.json` خاص بيه ودياله ديبندنسيز مختلفة تمامًا. **مفيش** إعداد `workspaces` حقيقي في npm. الأمر `npm run install:all` في الـ root بس بينفذ `npm install` في التلاتة بالتتابع (`cd client && npm install && cd ../server && npm install`).
 
 ---
 
@@ -815,13 +275,11 @@ npm run preview      # معاينة النسخة النهائية
 ├─────────────────────────────────────┤
 │  Vite                               │  ← Build Tool
 ├─────────────────────────────────────┤
-│  Tailwind CSS                       │  ← Styling
+│  Tailwind CSS 4                     │  ← Styling
 ├─────────────────────────────────────┤
-│  React Hook Form + Zod              │  ← Forms & Validation
+│  Recharts (lazy-loaded)             │  ← Charts
 ├─────────────────────────────────────┤
-│  Recharts                           │  ← Charts
-├─────────────────────────────────────┤
-│  jsPDF + jspdf-autotable            │  ← PDF Generation
+│  jsPDF + jspdf-autotable (lazy)     │  ← PDF Export
 ├─────────────────────────────────────┤
 │  Lucide React                       │  ← Icons
 ├─────────────────────────────────────┤
@@ -829,126 +287,33 @@ npm run preview      # معاينة النسخة النهائية
 └─────────────────────────────────────┘
 ```
 
-### Database Stack:
+### Backend Stack:
 ```
 ┌─────────────────────────────────────┐
-│  sql.js (Browser)                   │  ← Development
+│  Express.js 5                       │  ← Web Framework
 ├─────────────────────────────────────┤
-│  better-sqlite3 (Node.js)           │  ← Production
+│  better-sqlite3                     │  ← Database
 ├─────────────────────────────────────┤
-│  Firebase Firestore (Optional)      │  ← Cloud
-└─────────────────────────────────────┘
-```
-
-### Backend Stack (Optional):
-```
-┌─────────────────────────────────────┐
-│  Express.js                         │  ← Web Framework
+│  JWT + bcryptjs                     │  ← Auth
 ├─────────────────────────────────────┤
-│  JWT                                │  ← Authentication
-├─────────────────────────────────────┤
-│  bcryptjs                           │  ← Password Hashing
+│  dotenv                             │  ← Config
 ├─────────────────────────────────────┤
 │  Helmet + CORS + Rate Limit         │  ← Security
 └─────────────────────────────────────┘
 ```
 
-### Deployment Stack:
-```
-┌─────────────────────────────────────┐
-│  Docker + Docker Compose            │  ← Containerization
-├─────────────────────────────────────┤
-│  Vercel / Firebase / AWS            │  ← Hosting
-└─────────────────────────────────────┘
-```
+---
+
+## ⚡ الأداء - قرارات حقيقية اتخدناها
+
+هذا القسم يوثّق تريد-أوفز حقيقية حصلت في تطوير المشروع، مش نصايح عامة:
+
+1. **كل صفحة `React.lazy`** في `App.tsx` → أول تحميل بعد تسجيل الدخول ~184KB (59KB مضغوط) بدل تحميل كل الصفحات مرة واحدة.
+2. **الرسوم البيانية معزولة عن باقي الداشبورد** (`DashboardCharts.tsx` جوه `Suspense` منفصل) → كروت الإحصائيات تظهر فورًا، الرسوم (اللي بتسحب معاها ~525KB من مكتبات recharts/d3) تتحمّل في الخلفية بعد كده.
+3. **jsPDF متحمّل بـ dynamic `import()` جوه دالة التصدير نفسها**، مش أعلى الملف → زيارة صفحة التقارير من غير تصدير PDF ما بتنزّلش المكتبة (390KB) خالص.
+
+القرار الصريح هنا: الداشبورد الغنية (رسوم بيانية من أول لحظة) أهم من أصغر حجم تحميل ممكن - التعويض كان في تأجيل كل حاجة تانية ممكن تتأجل (PDF export، باقي الصفحات).
 
 ---
 
-## 🎯 مقارنة التقنيات
-
-| التقنية | البديل | ليه اخترناها |
-|---------|--------|--------------|
-| **React** | Vue, Angular | Community أكبر، Hooks أفضل |
-| **TypeScript** | JavaScript | Type Safety، أخطاء أقل |
-| **Vite** | Webpack, CRA | أسرع بكتير، HMR فوري |
-| **Tailwind** | Bootstrap, CSS Modules | Utility-first، حجم أصغر |
-| **Recharts** | Chart.js, D3.js | React components، أسهل |
-| **sql.js** | IndexedDB, LocalStorage | SQL حقيقي، أداء أفضل |
-| **Zod** | Yup, Joi | TypeScript-first، Type inference |
-| **Docker** | VMs, Heroku | Consistent، Portable |
-
----
-
-## 📈 إحصائيات المشروع
-
-### Bundle Size:
-- **Production Build:** ~1.1 MB
-- **Gzipped:** ~345 KB
-- **CSS:** ~35 KB
-- **JavaScript:** ~1.1 MB
-
-### Performance:
-- **First Contentful Paint:** < 1.5s
-- **Time to Interactive:** < 3s
-- **Lighthouse Score:** > 90
-
-### Code Quality:
-- **TypeScript:** 100% coverage
-- **Components:** 15+ reusable
-- **Services:** 5 business logic layers
-- **Repositories:** 3 data access layers
-
----
-
-## 🔗 روابط مفيدة
-
-### Documentation:
-- [React Docs](https://react.dev)
-- [TypeScript Docs](https://www.typescriptlang.org/docs)
-- [Vite Docs](https://vitejs.dev)
-- [Tailwind Docs](https://tailwindcss.com/docs)
-- [Recharts Docs](https://recharts.org)
-- [Zod Docs](https://zod.dev)
-- [sql.js Docs](https://sql.js.org)
-- [Docker Docs](https://docs.docker.com)
-
-### Tutorials:
-- [React TypeScript Tutorial](https://react-typescript-cheatsheet.netlify.app)
-- [Tailwind CSS Course](https://tailwindcss.com/docs)
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-
----
-
-## 🎓 تعلم المزيد
-
-### Frontend:
-1. React & TypeScript
-2. State Management (Context API)
-3. Forms & Validation
-4. Data Visualization
-5. Performance Optimization
-
-### Backend:
-1. Node.js & Express
-2. SQLite & SQL
-3. Authentication (JWT)
-4. Security Best Practices
-5. API Design
-
-### DevOps:
-1. Docker & Containerization
-2. CI/CD Pipelines
-3. Deployment Strategies
-4. Monitoring & Logging
-5. Scaling Applications
-
----
-
-**آخر تحديث:** 2024  
-**الإصدار:** 1.0.0
-
-<div align="center">
-
-**🛠️ Built with Modern Technologies! 🚀**
-
-</div>
+**Part of Seafood QMS - Quality Management System**

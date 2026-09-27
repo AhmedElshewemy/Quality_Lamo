@@ -1,3 +1,414 @@
-import React from 'react';
-const Reports: React.FC = () => <div className="p-6"><h1 className="text-2xl font-bold">التقارير</h1></div>;
+import React, { useMemo, useState } from 'react';
+import { FileText, Download, Calendar, TrendingUp, Building2, BarChart3 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useBranches } from '../hooks/useBranches';
+import { IssueCategory } from '../types';
+import { CATEGORY_LABELS, COMPLIANCE_LABELS } from '../utils/labels';
+
+type Period = 'weekly' | 'monthly' | 'quarterly';
+
+const PERIOD_LABELS: Record<Period, string> = {
+  weekly: 'أسبوعي',
+  monthly: 'شهري',
+  quarterly: 'ربع سنوي',
+};
+
+const CHART_COLORS = [
+  '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1',
+];
+
+const getDateRange = (period: Period) => {
+  const end = new Date();
+  const start = new Date();
+  if (period === 'weekly') start.setDate(end.getDate() - 7);
+  else if (period === 'monthly') start.setMonth(end.getMonth() - 1);
+  else start.setMonth(end.getMonth() - 3);
+  return { start, end };
+};
+
+const Reports: React.FC = () => {
+  const { issues } = useData();
+  const { currentUser } = useAuth();
+  const { branches, branchName } = useBranches();
+
+  const [period, setPeriod] = useState<Period>('monthly');
+  const [branchFilter, setBranchFilter] = useState<string>('all');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const dateRange = useMemo(() => getDateRange(period), [period]);
+
+  const filteredIssues = useMemo(() => {
+    return issues.filter((issue) => {
+      const date = new Date(issue.reportedAt);
+      const inRange = date >= dateRange.start && date <= dateRange.end;
+      const inBranch = branchFilter === 'all' || issue.branchId === branchFilter;
+      return inRange && inBranch;
+    });
+  }, [issues, dateRange, branchFilter]);
+
+  const stats = useMemo(() => {
+    const total = filteredIssues.length;
+    const resolved = filteredIssues.filter((i) => i.status === 'resolved' || i.status === 'closed').length;
+    const open = filteredIssues.filter((i) => i.status === 'open').length;
+    const inProgress = filteredIssues.filter((i) => i.status === 'in_progress').length;
+    const compliant = filteredIssues.filter((i) => i.complianceStatus === 'compliant').length;
+    const complianceRate = total > 0 ? Math.round((compliant / total) * 100) : 0;
+    return { total, resolved, open, inProgress, complianceRate };
+  }, [filteredIssues]);
+
+  const branchData = useMemo(() => {
+    return branches
+      .map((branch) => {
+        const branchIssues = filteredIssues.filter((i) => i.branchId === branch.id);
+        const resolved = branchIssues.filter((i) => i.status === 'resolved' || i.status === 'closed').length;
+        const compliant = branchIssues.filter((i) => i.complianceStatus === 'compliant').length;
+        return {
+          name: branch.name,
+          total: branchIssues.length,
+          resolved,
+          complianceRate: branchIssues.length > 0 ? Math.round((compliant / branchIssues.length) * 100) : 100,
+        };
+      })
+      .filter((b) => b.total > 0);
+  }, [branches, filteredIssues]);
+
+  const categoryData = useMemo(() => {
+    const cats: Record<string, { count: number; resolved: number }> = {};
+    filteredIssues.forEach((issue) => {
+      if (!cats[issue.category]) cats[issue.category] = { count: 0, resolved: 0 };
+      cats[issue.category].count++;
+      if (issue.status === 'resolved' || issue.status === 'closed') cats[issue.category].resolved++;
+    });
+    return Object.entries(cats)
+      .map(([key, val]) => ({
+        category: CATEGORY_LABELS[key as IssueCategory],
+        count: val.count,
+        resolved: val.resolved,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [filteredIssues]);
+
+  const generatePDF = async () => {
+    setIsExporting(true);
+    try {
+      // jsPDF pulls in html2canvas + dompurify (~260KB), so it's loaded on demand
+      // instead of bloating the initial page bundle every visitor has to download.
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+
+      const doc = new jsPDF();
+      const branchLabel = branchFilter === 'all' ? 'All Branches' : branchName(branchFilter);
+
+    // jsPDF's built-in fonts don't cover Arabic glyphs, so the exported PDF uses
+    // English labels even though the on-screen report is in Arabic.
+    doc.setFontSize(20);
+    doc.text('Seafood Restaurant - Quality Report', 105, 20, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text(`Report Type: ${period}`, 105, 35, { align: 'center' });
+    doc.text(`Branch: ${branchLabel}`, 105, 42, { align: 'center' });
+    doc.text(
+      `Period: ${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`,
+      105,
+      49,
+      { align: 'center' }
+    );
+    doc.text(`Generated by: ${currentUser?.name || ''}`, 105, 56, { align: 'center' });
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 105, 63, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.text('Summary', 14, 80);
+    autoTable(doc, {
+      startY: 85,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Issues', stats.total.toString()],
+        ['Resolved', stats.resolved.toString()],
+        ['Open', stats.open.toString()],
+        ['In Progress', stats.inProgress.toString()],
+        ['Compliance Rate', `${stats.complianceRate}%`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.setFontSize(14);
+    doc.text('Branch Breakdown', 14, (doc as any).lastAutoTable.finalY + 15);
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 20,
+      head: [['Branch', 'Total Issues', 'Resolved', 'Compliance Rate']],
+      body: branchData.map((b) => [b.name, b.total.toString(), b.resolved.toString(), `${b.complianceRate}%`]),
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.setFontSize(14);
+    doc.text('Category Breakdown', 14, (doc as any).lastAutoTable.finalY + 15);
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 20,
+      head: [['Category', 'Count', 'Resolved']],
+      body: categoryData.map((c) => [c.category, c.count.toString(), c.resolved.toString()]),
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    if (filteredIssues.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Issues Detail', 14, (doc as any).lastAutoTable.finalY + 15);
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 20,
+        head: [['Title', 'Branch', 'Category', 'Priority', 'Status', 'Compliance', 'Date']],
+        body: filteredIssues.map((issue) => [
+          issue.title.substring(0, 30),
+          branchName(issue.branchId),
+          CATEGORY_LABELS[issue.category],
+          issue.priority,
+          issue.status,
+          COMPLIANCE_LABELS[issue.complianceStatus],
+          new Date(issue.reportedAt).toLocaleDateString(),
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [59, 130, 246], fontSize: 8 },
+        bodyStyles: { fontSize: 7 },
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 22 },
+          6: { cellWidth: 20 },
+        },
+      });
+    }
+
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+      doc.text('Seafood Restaurant QMS - Confidential', 14, 290);
+    }
+
+    doc.save(`quality-report-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">التقارير</h1>
+          <p className="text-gray-500 mt-1">إنشاء وتصدير تقارير الجودة</p>
+        </div>
+        <button
+          onClick={generatePDF}
+          disabled={isExporting}
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <Download className="w-5 h-5" />
+          {isExporting ? 'جاري التحضير...' : 'تصدير PDF'}
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-600">الفترة:</span>
+            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+              {(['weekly', 'monthly', 'quarterly'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-4 py-2 text-sm font-medium transition ${
+                    period === p ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {PERIOD_LABELS[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-600">الفرع:</span>
+            <select
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">جميع الفروع</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+          <p className="text-xs text-gray-500 mt-1">إجمالي المشاكل</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <p className="text-2xl font-bold text-green-600">{stats.resolved}</p>
+          <p className="text-xs text-gray-500 mt-1">تم الحل</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
+          <p className="text-xs text-gray-500 mt-1">قيد المعالجة</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <p className="text-2xl font-bold text-red-600">{stats.open}</p>
+          <p className="text-xs text-gray-500 mt-1">مفتوحة</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <p className="text-2xl font-bold text-purple-600">{stats.complianceRate}%</p>
+          <p className="text-xs text-gray-500 mt-1">نسبة المطابقة</p>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-blue-500" />
+            أداء الفروع
+          </h3>
+          {branchData.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-16">لا توجد بيانات لهذه الفترة</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={branchData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="total" name="إجمالي" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="resolved" name="تم الحل" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-green-500" />
+            المشاكل حسب الفئة
+          </h3>
+          {categoryData.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-16">لا توجد بيانات لهذه الفترة</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={categoryData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} />
+                <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} width={80} />
+                <Tooltip />
+                <Bar dataKey="count" name="العدد" radius={[0, 4, 4, 0]}>
+                  {categoryData.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* Report Preview */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-blue-500" />
+          معاينة التقرير
+        </h3>
+        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800">تقرير جودة - {PERIOD_LABELS[period]}</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {dateRange.start.toLocaleDateString('ar-EG')} - {dateRange.end.toLocaleDateString('ar-EG')}
+            </p>
+            <p className="text-sm text-gray-500">
+              {branchFilter === 'all' ? 'جميع الفروع' : branchName(branchFilter)}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div className="text-center p-3 bg-white rounded-lg">
+              <p className="text-lg font-bold text-blue-600">{stats.total}</p>
+              <p className="text-xs text-gray-500">إجمالي</p>
+            </div>
+            <div className="text-center p-3 bg-white rounded-lg">
+              <p className="text-lg font-bold text-green-600">{stats.resolved}</p>
+              <p className="text-xs text-gray-500">تم الحل</p>
+            </div>
+            <div className="text-center p-3 bg-white rounded-lg">
+              <p className="text-lg font-bold text-yellow-600">{stats.inProgress}</p>
+              <p className="text-xs text-gray-500">قيد المعالجة</p>
+            </div>
+            <div className="text-center p-3 bg-white rounded-lg">
+              <p className="text-lg font-bold text-red-600">{stats.open}</p>
+              <p className="text-xs text-gray-500">مفتوح</p>
+            </div>
+            <div className="text-center p-3 bg-white rounded-lg">
+              <p className="text-lg font-bold text-purple-600">{stats.complianceRate}%</p>
+              <p className="text-xs text-gray-500">مطابقة</p>
+            </div>
+          </div>
+
+          {branchData.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-6">لا توجد بيانات لهذه الفترة</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[420px]">
+                <thead className="bg-blue-50">
+                  <tr>
+                    <th className="px-4 py-2 text-right text-blue-700">الفرع</th>
+                    <th className="px-4 py-2 text-right text-blue-700">إجمالي</th>
+                    <th className="px-4 py-2 text-right text-blue-700">تم الحل</th>
+                    <th className="px-4 py-2 text-right text-blue-700">المطابقة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {branchData.map((b, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      <td className="px-4 py-2">{b.name}</td>
+                      <td className="px-4 py-2">{b.total}</td>
+                      <td className="px-4 py-2">{b.resolved}</td>
+                      <td className="px-4 py-2">{b.complianceRate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default Reports;

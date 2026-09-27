@@ -93,7 +93,49 @@ npm start
 
 ---
 
-## 🏗️ المعمارية
+## ⚙️ الإعدادات (Environment Variables)
+
+كل جزء من المشروع له ملف `.env` خاص بيه (مفصولين عمداً، ومتجاهَلين في git):
+
+### `server/.env`
+```bash
+PORT=3001                                    # البورت اللي السيرفر شغال عليه
+NODE_ENV=development
+JWT_SECRET=your-secret-key-change-in-production
+DB_PATH=./seafood_qms.db
+CLIENT_URL=http://localhost:5173             # مسموح للـ CORS منه في بيئة التطوير
+```
+
+### `client/.env`
+```bash
+VITE_API_URL=/api        # مسار نسبي - يشتغل صحيح في التطوير والإنتاج مع بعض
+```
+
+**ليه `VITE_API_URL` نسبي مش `http://localhost:3001/api`؟**
+لأن في الإنتاج، Express نفسه هو اللي بيخدّم الفرونت إند، فمفيش داعي لمسار مطلق. وفي التطوير، `client/vite.config.ts` فيه `proxy` بيحوّل أي طلب لـ `/api` من `localhost:5173` (Vite) لـ `localhost:3001` (Express) تلقائيًا:
+```ts
+server: {
+  proxy: { '/api': { target: 'http://localhost:3001', changeOrigin: true } }
+}
+```
+
+⚠️ **مهم:** Vite بيحقن `VITE_*` variables وقت الـ **build**، مش وقت التشغيل. لو غيّرت `client/.env` لازم تعمل `npm run build` تاني في `client/` عشان القيمة الجديدة تتفعّل.
+
+⚠️ **مهم:** لو غيّرت `PORT` في `server/.env`، السيرفر بيحمّله عن طريق مكتبة `dotenv` (`import 'dotenv/config'` في أول سطر بـ `server/src/index.ts`) - لازم تعيد تشغيل السيرفر (`npm run dev` أو `npm start`) عشان القيمة الجديدة تتفعّل.
+
+---
+
+## 🔐 الصلاحيات (Roles & Permissions)
+
+| الدور | يشوف | يقدر يعمل |
+|---|---|---|
+| `quality_engineer` | لوحة التحكم (بياناته بس)، تقرير مشكلة، مشاكلي | يسجّل مشاكل، يحلّ مشاكله هو |
+| `quality_manager` | كل الصفحات + كل بيانات الشركة | كل حاجة فوق + يشوف/يحل كل المشاكل، يحذف مشاكل |
+| `admin` | نفس صلاحيات `quality_manager` | نفس صلاحيات `quality_manager` |
+
+**على مستوى السيرفر:** كل الـ endpoints محتاجة توكن JWT صحيح (`authenticateToken`). حذف المشكلة (`DELETE /api/issues/:id`) محمي كمان بـ middleware إضافي (`requireRole('admin', 'quality_manager')`) - يعني حتى لو مهندس جودة حاول يستخدم الـ API مباشرة (من برة الواجهة)، السيرفر هيرفض الطلب بـ `403`.
+
+---
 
 ### Frontend (client/)
 
@@ -212,6 +254,13 @@ GET /api/health                 # فحص صحة السيرفر
    - التحقق من كل البيانات
    - منع SQL Injection
 
+7. **Role-Based Access Control (RBAC)**
+   - كل مستخدم عنده `role` (`quality_engineer` / `quality_manager` / `admin`)
+   - middleware `requireRole(...)` بيحمي الـ endpoints الحساسة (زي حذف مشكلة) بغض النظر عن الواجهة
+
+8. **JSON Payload Limit**
+   - `25mb` - كافي لكذا صورة (base64) في تقرير المشكلة الواحد، بدون فتح الباب لطلبات ضخمة غير منطقية
+
 ---
 
 ## 🎯 المميزات
@@ -237,19 +286,32 @@ GET /api/health                 # فحص صحة السيرفر
 - **React 18** - مكتبة UI
 - **TypeScript** - Type safety
 - **Vite** - Build tool سريع
-- **Tailwind CSS** - Styling
+- **Tailwind CSS 4** - Styling
 - **Lucide React** - أيقونات
 - **React Hot Toast** - إشعارات
+- **Recharts** - الرسوم البيانية (لوحة التحكم والتقارير)
+- **jsPDF + jspdf-autotable** - تصدير تقارير PDF
+
+> **ملاحظة أداء:** `Recharts` و `jsPDF` مكتبات ثقيلة نسبيًا، فهي بتتحمّل بـ `React.lazy` بس وقت الحاجة الفعلية ليها (مش من أول تحميل للتطبيق) - راجع قسم "الأداء" تحت.
 
 ### Backend:
-- **Express.js** - Web framework
+- **Express.js 5** - Web framework
 - **TypeScript** - Type safety
-- **SQLite** - قاعدة بيانات
+- **SQLite (better-sqlite3)** - قاعدة بيانات
 - **JWT** - مصادقة
 - **bcrypt** - تشفير كلمات المرور
+- **dotenv** - تحميل متغيرات البيئة من `.env`
 - **Helmet** - أمان
 - **CORS** - Cross-origin
 - **Rate Limit** - حماية
+
+---
+
+## ⚡ الأداء (Performance)
+
+- **Route-level code splitting:** كل صفحة (`Dashboard`, `Reports`, ...) بتتحمّل في ملف JS منفصل عن طريق `React.lazy`، فأول تحميل للتطبيق بعد تسجيل الدخول صغير نسبيًا.
+- **تحميل مؤجل للمكتبات الثقيلة:** `jsPDF` (تصدير PDF) بيتحمّل بس لما المستخدم يدوس "تصدير PDF" في صفحة التقارير - مش قبل كده خالص.
+- **فصل الرسوم البيانية عن باقي الداشبورد:** لوحة التحكم نفسها مقسومة لجزئين: جزء سريع (كروت الإحصائيات + جدول آخر المشاكل) يظهر فورًا، وجزء الرسوم البيانية (`Recharts`) يتحمّل في الخلفية بعد كده مع placeholder بسيط لحد ما يوصل - عشان المستخدم يشوف بيانات مفيدة بسرعة من غير ما ينتظر مكتبة الرسوم التقيلة.
 
 ---
 
@@ -285,7 +347,9 @@ Vite Dev Server
     ↓
 React App
     ↓
-API Calls → http://localhost:3001/api/*
+API Calls → /api/*  (مسار نسبي)
+    ↓
+Vite proxy (vite.config.ts) يحوّلها لـ→ http://localhost:3001
     ↓
 Express Server
     ↓
@@ -326,10 +390,18 @@ SQLite Database
 - id (TEXT, PRIMARY KEY)
 - name (TEXT)
 - location (TEXT)
-- type (TEXT)
+- type (TEXT)             -- 'branch' | 'central_kitchen_warehouse'
 - created_at (DATETIME)
 - updated_at (DATETIME)
 ```
+
+**المواقع الحقيقية المسجّلة (4 مواقع):**
+| الاسم | النوع |
+|---|---|
+| فرع المعادي | `branch` |
+| فرع مدينة نصر | `branch` |
+| فرع التجمع الخامس | `branch` |
+| المطبخ المركزي والمخزن الرئيسي | `central_kitchen_warehouse` (مكان واحد بوظيفتين) |
 
 #### issues
 ```sql
@@ -390,6 +462,30 @@ if (success) {
 ---
 
 ## 🐛 استكشاف الأخطاء
+
+### المشكلة: "البريد الإلكتروني أو كلمة المرور غير صحيحة" مع إن البيانات صحيحة
+
+**السبب الأشهر:** `client/.env` بيتحقن وقت الـ **build**، فلو غيّرت `VITE_API_URL` أو `PORT` بتاع السيرفر بعد ما بنيت الفرونت إند، الملف القديم في `client/dist` لسه بيبعت الطلبات للبورت/المسار القديم.
+
+**الحل:**
+```bash
+cd client
+rm -rf node_modules dist package-lock.json
+npm install
+npm run build
+```
+
+### المشكلة: غيّرت `PORT` في `server/.env` ومحصلش تغيير
+
+**الحل:** لازم تعيد تشغيل السيرفر بعد أي تعديل في `.env` (`dotenv` بيقرأ الملف مرة واحدة بس وقت الإقلاع):
+```bash
+cd server
+npm run dev   # أو npm start بعد build
+```
+
+### المشكلة: `PathError: Missing parameter name at index 1: *`
+
+**السبب:** Express 5 (المستخدم هنا) بيعتمد على `path-to-regexp` v7 اللي بطّلت تدعم `app.get('*', ...)` كصيغة wildcard. الكود هنا مستخدم الصيغة الصحيحة بالفعل (`app.get('/*splat', ...)`) - الخطأ ده يظهر بس لو حد رجّع الصيغة القديمة أثناء تعديل الكود.
 
 ### المشكلة: Frontend مش بيتصل بالـ Backend
 

@@ -8,9 +8,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "reset-for-production": "node dist/scripts/reset-for-production.js",
+    "reset-for-production:dev": "tsx src/scripts/reset-for-production.ts"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "express": "^5.2.1",
     "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",
