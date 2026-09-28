@@ -1,40 +1,40 @@
-# 🚀 دليل التشغيل السريع
+# Quick Start Guide
 
-للتفاصيل (الإعدادات، الصلاحيات، حل المشاكل الشائعة) راجع `README.md` - هنا بس الأوامر.
+For the full setup details, permissions, and troubleshooting, refer to `README.md`. This file only covers the commands.
 
-## التثبيت (أول مرة)
+## First-time installation
 
 ```bash
 npm run install:all
 ```
 
-## التطوير
+## Development
 
 ```bash
 npm run dev
 ```
-بيشغّل الفرونت (`http://localhost:5173`) والباك (`http://localhost:3001`) مع بعض. Vite بيعمل proxy لـ `/api` تلقائيًا للباك إند (راجع `client/vite.config.ts`).
+This starts the frontend (`http://localhost:5173`) and backend (`http://localhost:3001`) together. Vite automatically proxies `/api` requests to the backend, as configured in `client/vite.config.ts`.
 
-## الإنتاج
+## Production
 
 ```bash
-npm run build   # يبني الفرونت والباك
-npm start        # يشغّل السيرفر - بيخدّم الـ API والفرونت المبني من نفس البورت (3001)
+npm run build   # Build frontend and backend
+npm start       # Start the server; it serves both the API and built frontend on port 3001
 ```
 
-## بيانات الدخول (بيانات تجريبية أول تشغيل)
+## Default login accounts (seeded on first run)
 
-| الدور | البريد | كلمة المرور |
+| Role | Email | Password |
 |---|---|---|
-| مدير النظام | `admin@seafood.com` | `Admin@123456` |
-| مدير الجودة | `sara@seafood.com` | `Manager@123` |
-| مهندس جودة | `ahmed@seafood.com` | `Engineer@123` |
+| System Administrator | `admin@seafood.com` | `Admin@123456` |
+| Quality Manager | `sara@seafood.com` | `Manager@123` |
+| Quality Engineer | `ahmed@seafood.com` | `Engineer@123` |
 
-جدول كامل بكل الحسابات في `AUTH_GUIDE.md`.
+See `AUTH_GUIDE.md` for the full account table and role details.
 
-## لو حاجة مش شغالة
+## If something is not working
 
-راجع `README.md` → قسم "استكشاف الأخطاء" (فيه الحالات الحقيقية اللي قابلناها: تسجيل دخول بيفشل بعد تغيير البورت، السيرفر ما بيقرأش `.env` الجديد، إلخ).
+Check `README.md` in the troubleshooting section. It includes the real issues observed during setup, such as login failures after changing the port and the server not picking up a changed `.env` value.
 
 ---
 

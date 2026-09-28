@@ -1,77 +1,77 @@
-# 🔐 نظام تسجيل الدخول
+# Authentication Guide
 
-## نظرة عامة
+## Overview
 
-المصادقة حقيقية بالكامل من طرف السيرفر: كلمات المرور مخزنة **مشفّرة (bcrypt)** في قاعدة بيانات SQLite، وتسجيل الدخول بيرجع **JWT token** صالح لمدة 24 ساعة. مفيش أي كلمة مرور أو بيانات حساسة في أي ملف `.env` أو في كود الفرونت إند.
+Authentication is handled entirely by the server. User passwords are stored as hashed values in the SQLite database using `bcrypt`, and login returns a JWT token valid for 24 hours. No passwords or sensitive values are stored in `.env` files or in the frontend source code.
 
-راجع `DATABASE_GUIDE.md` لتفاصيل الجداول، و`SECURITY.md` لتفاصيل الحماية.
+See `DATABASE_GUIDE.md` for table details and `SECURITY.md` for the security model.
 
 ---
 
-## 📋 حسابات الدخول الافتراضية (Seed Data)
+## Default login accounts (seed data)
 
-دول بيانات تجريبية بتتزرع تلقائيًا في قاعدة البيانات لو جدول `users` فاضي (أول تشغيل). عرّفها في `server/src/index.ts` داخل `seedInitialData()`.
+These demo accounts are created automatically if the `users` table is empty on first startup. They are defined in `server/src/index.ts` inside `seedInitialData()`.
 
-### 👑 مدير النظام (Admin)
+### Admin
 ```
 admin@seafood.com / Admin@123456
 ```
-دور: `admin` - صلاحيات كاملة، مش مربوط بفرع معيّن.
+Role: `admin` - full system privileges, not tied to a specific branch.
 
-### 📊 مدير الجودة (Quality Manager)
+### Quality Manager
 ```
 sara@seafood.com / Manager@123
 ```
-دور: `quality_manager` - يشوف كل الفروع وكل المشاكل، يقدر يحذف مشاكل.
+Role: `quality_manager` - can view all branches and all issues and can delete issues.
 
-### 🔧 مهندسو الجودة (Quality Engineers) - كل واحد مربوط بفرع
-| البريد | كلمة المرور | الفرع |
+### Quality Engineers - each one is tied to a branch
+| Email | Password | Branch |
 |---|---|---|
-| `ahmed@seafood.com` | `Engineer@123` | فرع المعادي (`branch-1`) |
-| `mahmoud@seafood.com` | `Engineer@123` | فرع مدينة نصر (`branch-2`) |
-| `khaled@seafood.com` | `Engineer@123` | فرع التجمع الخامس (`branch-3`) |
+| `ahmed@seafood.com` | `Engineer@123` | Al-Maadi branch (`branch-1`) |
+| `mahmoud@seafood.com` | `Engineer@123` | Nasr City branch (`branch-2`) |
+| `khaled@seafood.com` | `Engineer@123` | Fifth Settlement branch (`branch-3`) |
 
-دور: `quality_engineer` - يشوف بياناته بس (المشاكل اللي سجّلها هو) في كل الداشبورد وصفحة "مشاكلي".
+Role: `quality_engineer` - can see only their own data (issues they created) across the dashboard and "My Issues" page.
 
-راجع `README.md` → قسم "الصلاحيات" لجدول كامل بالفرق بين الأدوار على مستوى الواجهة والسيرفر.
+Refer to `README.md` for the full role matrix and the differences between backend and frontend permissions.
 
 ---
 
-## 🚀 التجهيز للإنتاج (مسح البيانات التجريبية + أدمن حقيقي واحد)
+## Production setup (remove demo data and retain one real admin)
 
-في `server/`، فيه سكريبت جاهز بيمسح **كل** المستخدمين والمشاكل التجريبية، ويسيب الفروع (دي بيانات حقيقية عن مواقع المطعم، مش تجريبية)، وينشئ حساب أدمن واحد بس ببياناتك الحقيقية:
+The `server/` folder contains a ready-to-use script that removes all seeded users and issues, keeps the branch records, and creates a single real admin account using your own details:
 
 ```bash
 cd server
-npm run build   # لو لسه معملتش build
+npm run build   # if build has not been run yet
 
-ADMIN_NAME="اسمك الحقيقي" \
+ADMIN_NAME="Your real name" \
 ADMIN_EMAIL="you@yourcompany.com" \
-ADMIN_PASSWORD="كلمة-مرور-قوية-حقيقية" \
+ADMIN_PASSWORD="a-real-strong-password" \
 npm run reset-for-production -- --confirm
 ```
 
-**لازم `--confirm`** - بدونها السكريبت هيرفض يعمل حاجة، عشان تتفادى مسح البيانات بالغلط. بعد التشغيل:
-1. سجّل دخول بالحساب الجديد
-2. من صفحة "الموظفين"، ضيف باقي الفريق (مديرين ومهندسين) بحساباتهم الحقيقية - راجع القسم اللي فوق "إضافة مستخدم"
+The `--confirm` flag is required. Without it, the script refuses to proceed to prevent accidental data loss. After it runs:
+1. Sign in with the new admin account
+2. From the Staff page, add the rest of the team with real credentials
 
-⚠️ **السكريبت ده بيمسح كل حاجة موجودة وقت التشغيل** - لو عندك بيانات حقيقية اتسجلت بالفعل (مشاكل، حسابات) ومحتاج تحافظ عليها، **متشغّلوش**. هو مخصّص لمرة واحدة بس، أول ما تجهّز السيرفر للاستخدام الحقيقي وقبل ما حد يبدأ يستخدمه فعليًا.
+Warning: this script deletes everything currently in the database at runtime. If you already have real data (issues, users, production records) that must be retained, do not run it. It is intended for a one-time reset before the system is used in real production.
 
 ---
 
-## 🔧 كيفية إضافة أو تعديل مستخدم
+## How to add or update a user
 
-### إضافة مستخدم (من الواجهة - الطريقة العادية)
+### Add a user from the UI (standard method)
 
-صفحة "الموظفين" فيها زرار "+ إضافة مستخدم" - **يظهر للأدمن بس** (`admin`، مش `quality_manager`). الفورم بياخد الاسم، البريد، كلمة مرور (8 حروف على الأقل)، الدور، والفرع (لو الدور مهندس جودة). بيتحقق من عدم تكرار البريد، وبيرجّع رسالة خطأ واضحة لو حصل مشكلة.
+The Staff page includes an "+ Add User" button, visible only to admins (`admin`). The form asks for name, email, password (minimum 8 characters), role, and branch (when the role is quality engineer). It prevents duplicate emails and returns a clear error on failure.
 
-على مستوى السيرفر: `POST /api/users`، محمي بـ `requireRole('admin')` - حتى لو حد نادى الـ API مباشرة بحساب مدير جودة (`quality_manager`)، هيرجع `403`.
+At the server level, `POST /api/users` is protected by `requireRole('admin')`. Even if a quality manager attempts to call the API directly, the server responds with `403`.
 
-### تعديل مستخدم أو حذفه
+### Update or delete a user
 
-مفيش endpoint أو واجهة لتعديل/حذف مستخدم موجود لسه - بس الإضافة. لو محتاج تعدّل أو تمسح حساب، استخدم SQL مباشر (نفس الأسلوب تحت).
+There is no update or delete user endpoint in the current codebase beyond creation. If you need to edit or remove an account, use direct SQL as shown below.
 
-### تعديل مباشر في قاعدة البيانات (SQL)
+### Direct database update (SQL)
 
 ```bash
 cd server
@@ -79,39 +79,40 @@ node -e "
 const Database = require('better-sqlite3');
 const db = new Database('./seafood_qms.db');
 db.prepare('UPDATE users SET role = ? WHERE email = ?').run('quality_manager', 'user@seafood.com');
-console.log('تم التعديل');
+console.log('User updated');
 "
 ```
 
 ---
 
-## 🔒 متطلبات كلمة المرور
+## Password requirements
 
-مفيش تحقق من قوة كلمة المرور مطبّق حاليًا على مستوى الكود (`POST /api/auth/login` بس بيقارن الهاش). لو حابب تضيف تحقق عند إنشاء مستخدم جديد، ده المكان المنطقي (endpoint إنشاء مستخدم لسه مش موجود - راجع الملاحظة فوق).
+No password strength validation is currently implemented in the codebase. The login route only verifies the stored hash. If you want to add a password policy while creating a user, that is the proper place to enforce it.
 
 ---
 
-## 🛡️ الأمان المُطبّق فعليًا
+## Security currently in place
 
-✅ Password hashing (bcrypt, salt rounds = 10)
-✅ JWT tokens (صلاحية 24 ساعة)
-✅ Rate limiting (100 طلب / 15 دقيقة)
-✅ Role-Based Access Control على الـ endpoints الحساسة
-✅ Token مخزن في `sessionStorage` بالفرونت إند، بيتبعت في `Authorization: Bearer <token>`
+✅ Password hashing with `bcrypt` and 10 salt rounds
+✅ JWT tokens valid for 24 hours
+✅ Rate limiting (100 requests per 15 minutes)
+✅ Role-based access control on sensitive endpoints
+✅ Token stored in frontend `sessionStorage` and sent as `Authorization: Bearer <token>`
 
-⚠️ **لسه مش مطبّق (يستحق الإضافة قبل إنتاج حقيقي):**
+⚠️ Not yet implemented but worth adding before real production use:
 - Two-factor authentication
-- Password reset flow (نسيت كلمة المرور)
-- Refresh tokens (لو انتهى الـ 24 ساعة، المستخدم لازم يسجّل دخول تاني من الصفر)
-- Account lockout بعد محاولات فاشلة متكررة (الـ rate limiting الحالي عام على كل الـ API، مش خاص بـ login بس)
+- Password reset flow
+- Refresh tokens (once the 24-hour JWT expires, the user must sign in again)
+- Account lockout after repeated failed attempts (current rate limiting is global, not login-specific)
 
 ---
 
-## 🔍 استكشاف الأخطاء
+## Troubleshooting
 
-### "البريد الإلكتروني أو كلمة المرور غير صحيحة" مع إن البيانات صحيحة
+### "Email or password is incorrect" even when credentials are right
 
-**السبب الأشهر عمليًا:** الفرونت إند مبني بنسخة قديمة من `client/.env` (Vite بيحقن `VITE_API_URL` وقت البناء، مش وقت التشغيل). الحل:
+The most common cause is an outdated frontend configuration in `client/.env`. Vite injects `VITE_API_URL` at build time, not runtime. The fix is:
+
 ```bash
 cd client
 rm -rf node_modules dist package-lock.json
@@ -119,16 +120,17 @@ npm install
 npm run build
 ```
 
-### تسجيل الدخول بيرجع خطأ شبكة (Network Error) مش رسالة "بيانات غلط"
+### Login returns a network error instead of an auth failure
 
-اتأكد إن السيرفر شغال فعليًا على البورت المحدد في `server/.env`:
+Ensure the backend is running on the port configured in `server/.env`:
+
 ```bash
 curl http://localhost:3001/api/health
 ```
 
-### عايز تبدأ من حسابات فاضية تمامًا (بدون بيانات تجريبية)
+### You want a completely clean demo state
 
-مفيش flag لإيقاف الـ seeding حاليًا - أسهل حل هو حذف الـ array بتاع `users`/`branches`/`issues` في `seedInitialData()` مؤقتًا، أو مسح الداتابيز والسماح لها تتزرع وبعدين تمسح المستخدمين التجريبيين يدويًا بعد إنشاء حسابك.
+There is no flag to disable seeding currently. The easiest method is to remove the seeded arrays in `seedInitialData()` temporarily, or delete the database and let it reseed before manually cleaning up the demo users after creating your own admin account.
 
 ---
 

@@ -1,262 +1,262 @@
-# 🐟 نظام إدارة الجودة - مطعم سي فود
+# Seafood QMS - Quality Management System
 
-نظام شامل لإدارة الجودة مبني بـ **Clean Architecture** مع فصل كامل بين Frontend و Backend.
+A complete quality management system built with a clear separation between the frontend and backend.
 
 ---
 
-## 📁 هيكل المشروع
+## Project structure
 
 ```
 seafood-qms/
 │
 ├── client/                    # Frontend (React + TypeScript)
 │   ├── src/
-│   │   ├── components/        # مكونات React
-│   │   ├── contexts/          # إدارة الحالة
-│   │   ├── pages/             # صفحات التطبيق
-│   │   ├── services/          # خدمات API
-│   │   ├── types/             # تعريفات TypeScript
-│   │   ├── App.tsx            # المكون الرئيسي
-│   │   ├── main.tsx           # نقطة الدخول
-│   │   └── index.css          # الأنماط العامة
-│   ├── dist/                  # ملفات البناء
-│   ├── package.json           # تبعيات Frontend
-│   ├── vite.config.ts         # إعدادات Vite
-│   └── tsconfig.json          # إعدادات TypeScript
+│   │   ├── components/        # React components
+│   │   ├── contexts/          # State management
+│   │   ├── pages/             # Application pages
+│   │   ├── services/          # API services
+│   │   ├── types/             # TypeScript definitions
+│   │   ├── App.tsx            # Main app component
+│   │   ├── main.tsx           # Entry point
+│   │   └── index.css          # Global styles
+│   ├── dist/                  # Production build output
+│   ├── package.json           # Frontend dependencies
+│   ├── vite.config.ts         # Vite configuration
+│   └── tsconfig.json          # TypeScript configuration
 │
 ├── server/                    # Backend (Express + TypeScript)
 │   ├── src/
-│   │   └── index.ts           # السيرفر الرئيسي
-│   ├── dist/                  # ملفات JavaScript المبنية
-│   ├── package.json           # تبعيات Backend
-│   └── tsconfig.json          # إعدادات TypeScript
+│   │   └── index.ts           # Main server file
+│   ├── dist/                  # Compiled JavaScript output
+│   ├── package.json           # Backend dependencies
+│   └── tsconfig.json          # TypeScript configuration
 │
-├── package.json               # إدارة الأوامر الرئيسية
-└── README.md                  # هذا الملف
+├── package.json               # Root scripts and orchestration
+└── README.md                  # This file
 ```
 
 ---
 
-## 🚀 التشغيل
+## Getting started
 
-### 1️⃣ التثبيت
+### 1. Install dependencies
 
 ```bash
-# تثبيت كل التبعيات
 npm install
 ```
 
-### 2️⃣ التطوير
+### 2. Run in development
 
 ```bash
-# تشغيل Frontend و Backend معاً
+# Start frontend and backend together
 npm run dev
 
-# أو بشكل منفصل:
-npm run dev:client    # Frontend على http://localhost:5173
-npm run dev:server    # Backend على http://localhost:3001
+# Or run separately:
+npm run dev:client    # Frontend at http://localhost:5173
+npm run dev:server    # Backend at http://localhost:3001
 ```
 
-### 3️⃣ الإنتاج
+### 3. Production build
 
 ```bash
-# بناء المشروع
+# Build the project
 npm run build
 
-# تشغيل السيرفر (يخدم Frontend من client/dist/)
+# Start the server (serves the frontend from client/dist/)
 npm start
 ```
 
-**النتيجة:** كل شيء على `http://localhost:3001`
+Result: everything is served on `http://localhost:3001`.
 
 ---
 
-## 🔐 بيانات الدخول
+## Default login accounts
 
-### 👑 مدير النظام
+### Admin
 ```
-البريد: admin@seafood.com
-كلمة المرور: Admin@123456
-```
-
-### 📊 مدير الجودة
-```
-البريد: sara@seafood.com
-كلمة المرور: Manager@123
+Email: admin@seafood.com
+Password: Admin@123456
 ```
 
-### 🔧 مهندس جودة
+### Quality Manager
 ```
-البريد: ahmed@seafood.com
-كلمة المرور: Engineer@123
+Email: sara@seafood.com
+Password: Manager@123
+```
+
+### Quality Engineer
+```
+Email: ahmed@seafood.com
+Password: Engineer@123
 ```
 
 ---
 
-## ⚙️ الإعدادات (Environment Variables)
+## Environment variables
 
-كل جزء من المشروع له ملف `.env` خاص بيه (مفصولين عمداً، ومتجاهَلين في git):
+Each project section has its own `.env` file and they are intentionally separated and ignored by git.
 
 ### `server/.env`
 ```bash
-PORT=3001                                    # البورت اللي السيرفر شغال عليه
+PORT=3001
 NODE_ENV=development
 JWT_SECRET=your-secret-key-change-in-production
 DB_PATH=./seafood_qms.db
-CLIENT_URL=http://localhost:5173             # مسموح للـ CORS منه في بيئة التطوير
+CLIENT_URL=http://localhost:5173
 ```
 
 ### `client/.env`
 ```bash
-VITE_API_URL=/api        # مسار نسبي - يشتغل صحيح في التطوير والإنتاج مع بعض
+VITE_API_URL=/api
 ```
 
-**ليه `VITE_API_URL` نسبي مش `http://localhost:3001/api`؟**
-لأن في الإنتاج، Express نفسه هو اللي بيخدّم الفرونت إند، فمفيش داعي لمسار مطلق. وفي التطوير، `client/vite.config.ts` فيه `proxy` بيحوّل أي طلب لـ `/api` من `localhost:5173` (Vite) لـ `localhost:3001` (Express) تلقائيًا:
+Why is `VITE_API_URL` relative instead of `http://localhost:3001/api`?
+Because in production, Express serves the frontend itself, so an absolute URL is unnecessary. In development, `client/vite.config.ts` contains a proxy that redirects `/api` from `localhost:5173` (Vite) to `localhost:3001` (Express).
+
 ```ts
 server: {
   proxy: { '/api': { target: 'http://localhost:3001', changeOrigin: true } }
 }
 ```
 
-⚠️ **مهم:** Vite بيحقن `VITE_*` variables وقت الـ **build**، مش وقت التشغيل. لو غيّرت `client/.env` لازم تعمل `npm run build` تاني في `client/` عشان القيمة الجديدة تتفعّل.
+Important: Vite injects `VITE_*` variables at build time, not runtime. If you change `client/.env`, rerun `npm run build` in `client/` so the new value is applied.
 
-⚠️ **مهم:** لو غيّرت `PORT` في `server/.env`، السيرفر بيحمّله عن طريق مكتبة `dotenv` (`import 'dotenv/config'` في أول سطر بـ `server/src/index.ts`) - لازم تعيد تشغيل السيرفر (`npm run dev` أو `npm start`) عشان القيمة الجديدة تتفعّل.
+Important: if you change `PORT` in `server/.env`, the server loads it via `dotenv` (`import 'dotenv/config'` at the top of `server/src/index.ts`). Restart the server for the new value to take effect.
 
 ---
 
-## 🔐 الصلاحيات (Roles & Permissions)
+## Roles and permissions
 
-| الدور | يشوف | يقدر يعمل |
+| Role | Can view | Can do |
 |---|---|---|
-| `quality_engineer` | لوحة التحكم (بياناته بس)، تقرير مشكلة، مشاكلي | يسجّل مشاكل، يحلّ مشاكله هو |
-| `quality_manager` | كل الصفحات + كل بيانات الشركة | كل حاجة فوق + يشوف/يحل كل المشاكل، يحذف مشاكل |
-| `admin` | نفس صلاحيات `quality_manager` | نفس صلاحيات `quality_manager` |
+| `quality_engineer` | Dashboard and their own data, report issue, own issues | Submit issues, resolve their own issues |
+| `quality_manager` | All pages and all company data | Everything above, view/resolve all issues, delete issues |
+| `admin` | Same privileges as `quality_manager` | Same as `quality_manager` |
 
-**على مستوى السيرفر:** كل الـ endpoints محتاجة توكن JWT صحيح (`authenticateToken`). حذف المشكلة (`DELETE /api/issues/:id`) محمي كمان بـ middleware إضافي (`requireRole('admin', 'quality_manager')`) - يعني حتى لو مهندس جودة حاول يستخدم الـ API مباشرة (من برة الواجهة)، السيرفر هيرفض الطلب بـ `403`.
+At the server level, each endpoint requires a valid JWT token (`authenticateToken`). Deleting an issue (`DELETE /api/issues/:id`) is also protected by an additional middleware (`requireRole('admin', 'quality_manager')`). This means even if a quality engineer tries to call the API directly, the request is rejected with `403`.
 
 ---
 
-### Frontend (client/)
+### Frontend (`client/`)
 
 ```
 client/src/
-├── components/          # مكونات قابلة لإعادة الاستخدام
-│   ├── Layout.tsx       # التخطيط الرئيسي
-│   └── ErrorBoundary.tsx # معالجة الأخطاء
+├── components/          # Reusable UI components
+│   ├── Layout.tsx       # Main layout
+│   └── ErrorBoundary.tsx # Error handling
 │
-├── contexts/            # إدارة الحالة
-│   ├── AuthContext.tsx  # المصادقة
-│   └── DataContext.tsx  # البيانات
+├── contexts/            # Application state
+│   ├── AuthContext.tsx  # Authentication
+│   └── DataContext.tsx  # Shared data
 │
-├── pages/               # صفحات التطبيق
-│   ├── Login.tsx        # تسجيل الدخول
-│   ├── Dashboard.tsx    # لوحة التحكم
-│   ├── ReportIssue.tsx  # رفع مشكلة
-│   ├── IssuesList.tsx   # قائمة المشاكل
-│   ├── Reports.tsx      # التقارير
-│   ├── Branches.tsx     # الفروع
-│   └── Staff.tsx        # الموظفين
+├── pages/               # App pages
+│   ├── Login.tsx        # Login page
+│   ├── Dashboard.tsx    # Dashboard
+│   ├── ReportIssue.tsx  # Report issue
+│   ├── IssuesList.tsx   # Issues list
+│   ├── Reports.tsx      # Reports
+│   ├── Branches.tsx     # Branches
+│   └── Staff.tsx        # Staff members
 │
-├── services/            # خدمات API
-│   └── apiClient.ts     # عميل API
+├── services/            # API calls
+│   └── apiClient.ts     # API client
 │
-└── types/               # تعريفات TypeScript
-    └── index.ts         # الأنواع
+└── types/               # TypeScript definitions
+    └── index.ts         # Shared types
 ```
 
-### Backend (server/)
+### Backend (`server/`)
 
 ```
 server/src/
-└── index.ts             # السيرفر الرئيسي
-    ├── إعدادات الأمان
-    ├── قاعدة البيانات (SQLite)
-    ├── المصادقة (JWT)
-    ├── مسارات (Routes)
+└── index.ts             # Main server entry point
+    ├── Security setup
+    ├── Database (SQLite)
+    ├── Authentication (JWT)
+    ├── Routes
     │   ├── /api/auth/login
     │   ├── /api/issues
     │   ├── /api/branches
     │   ├── /api/users
     │   └── /api/stats
-    └── خدمة Frontend
+    └── Frontend serving
 ```
 
 ---
 
-## 📡 API Endpoints
+## API endpoints
 
-### المصادقة
+### Authentication
 ```
 POST /api/auth/login
 Body: { email, password }
 Response: { token, user }
 ```
 
-### المشاكل
+### Issues
 ```
-GET    /api/issues              # جلب كل المشاكل
-GET    /api/issues/:id          # جلب مشكلة واحدة
-POST   /api/issues              # إنشاء مشكلة
-PUT    /api/issues/:id          # تحديث مشكلة
-DELETE /api/issues/:id          # حذف مشكلة
-```
-
-### الفروع
-```
-GET /api/branches               # جلب كل الفروع
+GET    /api/issues              # Get all issues
+GET    /api/issues/:id          # Get one issue
+POST   /api/issues              # Create issue
+PUT    /api/issues/:id          # Update issue
+DELETE /api/issues/:id          # Delete issue
 ```
 
-### المستخدمين
+### Branches
 ```
-GET /api/users                  # جلب كل المستخدمين
-GET /api/users/:id              # جلب مستخدم واحد
-```
-
-### الإحصائيات
-```
-GET /api/stats/issues           # إحصائيات المشاكل
+GET /api/branches               # Get all branches
 ```
 
-### الصحة
+### Users
 ```
-GET /api/health                 # فحص صحة السيرفر
+GET /api/users                  # Get all users
+GET /api/users/:id              # Get one user
+```
+
+### Statistics
+```
+GET /api/stats/issues           # Issue statistics
+```
+
+### Health
+```
+GET /api/health                 # Server health check
 ```
 
 ---
 
-## 🔒 الأمان
+## Security
 
-### ✅ ما هو مطبق:
+### Implemented
 
-1. **JWT Authentication**
-   - كل طلب لازم يكون معاه token
-   - token صالح لمدة 24 ساعة
-   - تخزين آمن في sessionStorage
+1. JWT authentication
+   - Every request requires a token
+   - Token is valid for 24 hours
+   - Token is stored in `sessionStorage`
 
-2. **Password Hashing**
-   - كلمات المرور مش مخزنة plain text
-   - استخدام bcrypt مع salt rounds = 10
+2. Password hashing
+   - Passwords are not stored as plain text
+   - `bcrypt` is used with salt rounds = 10
 
-3. **Rate Limiting**
-   - حد 100 طلب كل 15 دقيقة
-   - حماية من الهجمات
+3. Rate limiting
+   - 100 requests per 15 minutes
+   - Protection from abuse and brute-force traffic
 
-4. **Security Headers**
-   - Helmet يضيف headers أمان
-   - حماية من XSS, CSRF, etc.
+4. Security headers
+   - Helmet adds security headers
+   - Helps mitigate XSS, clickjacking, and related issues
 
-5. **CORS Protection**
-   - السماح فقط للـ Frontend
-   - منع الوصول من مصادر غير مصرح بها
+5. CORS protection
+   - Only the configured frontend origin is allowed
+   - Prevents unauthorized cross-origin usage
 
-6. **Server-side Validation**
-   - التحقق من كل البيانات
-   - منع SQL Injection
+6. Server-side validation
+   - Input is checked on the server before storage
+   - Helps prevent malformed data and injection issues
 
-7. **Role-Based Access Control (RBAC)**
-   - كل مستخدم عنده `role` (`quality_engineer` / `quality_manager` / `admin`)
-   - middleware `requireRole(...)` بيحمي الـ endpoints الحساسة (زي حذف مشكلة) بغض النظر عن الواجهة
+7. Role-based access control (RBAC)
+   - Each user has a role: `quality_engineer`, `quality_manager`, or `admin`
+   - `requireRole(...)` protects sensitive endpoints regardless of client-side UI state
 
 8. **JSON Payload Limit**
    - `25mb` - كافي لكذا صورة (base64) في تقرير المشكلة الواحد، بدون فتح الباب لطلبات ضخمة غير منطقية

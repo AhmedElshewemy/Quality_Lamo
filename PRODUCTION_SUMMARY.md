@@ -1,50 +1,51 @@
-# 📋 ملخص المشروع - الحالة الحقيقية
+# Project Summary - Actual Status
 
-> هذا الملف يستبدل نسخة قديمة كانت بتوصف مميزات مخطط لها (Zod validation, logger.ts, Firebase integration) لم تُبنَ فعليًا. اللي تحت ده وصف لما هو موجود وشغال في الكود بالفعل.
+> This file replaces an older summary that described features that were planned but never actually implemented, such as Zod validation, a logger module, and Firebase integration. The content below describes only what exists and works in the codebase today.
 
-## ✅ اللي مبني وشغال
+## ✅ What is built and working
 
-### Backend حقيقي (Express + SQLite)
-- مصادقة JWT حقيقية، كلمات مرور مشفّرة bcrypt (مش localStorage، مش بيانات في ملف `.env`)
-- Role-Based Access Control (`requireRole`) على الـ endpoints الحساسة
-- بنية modular: `routes/`, `db/`, `middleware/`, `utils/`, `config/` - كل مسؤولية في ملفها
-- راجع `server/README.md`, `AUTH_GUIDE.md`, `DATABASE_GUIDE.md`, `SECURITY.md`
+### Real backend (Express + SQLite)
+- Real JWT authentication with bcrypt password hashing
+- Role-based access control (`requireRole`) on sensitive endpoints
+- Modular structure: `routes/`, `db/`, `middleware/`, `utils/`, `config/`
+- See `server/README.md`, `AUTH_GUIDE.md`, `DATABASE_GUIDE.md`, and `SECURITY.md`
 
-### Frontend كامل (6 صفحات شغالة، مش placeholders)
-- **لوحة التحكم:** كروت إحصائيات + 4 رسوم بيانية + جدول آخر المشاكل، مفلترة حسب الدور (مهندس يشوف بياناته بس، مدير يشوف كل الشركة)
-- **تقرير مشكلة:** فورم كامل مع رفع صور، ربط حقيقي بالـ API
-- **مشاكلي / جميع المشاكل:** فلاتر (حالة، فئة، فرع)، تسجيل حل، حذف (للمدير/الأدمن)
-- **الفروع:** نظرة عامة على كل موقع مع إحصائيات المطابقة
-- **الموظفين:** نظرة عامة على الفريق مع إحصائيات كل مستخدم
-- **التقارير:** فلاتر فترة/فرع، رسوم بيانية، تصدير PDF حقيقي
+### Complete frontend (6 functional pages, not placeholders)
+- Dashboard: KPI cards + 4 charts + recent issues table, filtered by role (engineers only see their own data; managers see the whole company)
+- Report issue: full issue form with photo uploads and real API integration
+- My issues / all issues: filters for status, category, and branch; resolve and delete actions for managers/admins
+- Branches: overview of each location with compliance statistics
+- Staff: team overview with per-user stats
+- Reports: time filters, charts, and real PDF export
 
-### تجاوب وأداء
-- سايدبار متجاوب (drawer على الموبايل، ثابت على الشاشات الكبيرة)
-- كل صفحة `React.lazy`-loaded، الرسوم البيانية معزولة عن باقي الداشبورد، jsPDF محمّل عند الطلب بس
-- راجع `TECH_STACK.md` → قسم الأداء للتفاصيل والأرقام الحقيقية
+### Responsiveness and performance
+- Responsive sidebar with a mobile drawer and desktop fixed layout
+- Each page is lazy-loaded with `React.lazy`
+- Charts are isolated from the rest of the dashboard and jsPDF loads on demand when needed
+- See `TECH_STACK.md` for the real performance details
 
-## ⚠️ اللي لسه مش مبني (بصراحة)
+## ⚠️ What is not yet built
 
-- **Structured/persistent logging** - `console.log`/`console.error` بس حاليًا
-- **Automated database backups**
-- **Input validation library** (Zod أو غيرها) - التحقق حاليًا يدوي في كل route
-- **ESLint / Prettier** - مفيش config files لسه
-- **Refresh tokens / password reset flow**
-- **صفحة "إضافة مستخدم" في الواجهة** - الإضافة حاليًا عبر تعديل seed data أو SQL مباشر (راجع `AUTH_GUIDE.md`)
-- **دعم العربي في تصدير PDF** - jsPDF بيصدّر بعناوين إنجليزية (خطوطه المدمجة مبتدعمش العربي)
+- Structured or persistent logging - only `console.log` / `console.error` are used
+- Automated database backups
+- Input validation library such as Zod - validation is still manual in each route
+- ESLint / Prettier configuration files
+- Refresh tokens / password reset flow
+- Add-user UI page - current creation is done via seed data or direct SQL under the current setup
+- Arabic support in PDF export - jsPDF uses embedded English labels and does not support Arabic text out of the box
 
-## 📚 التوثيق - إيه اللي تقرأه لإيه
+## 📚 Documentation guide
 
-| عايز تعرف | اقرأ |
+| If you want to know | Read |
 |---|---|
-| إزاي تشغّل المشروع | `README.md`, `RUNNING.md` |
-| هيكل الملفات بالتفصيل | `PROJECT_STRUCTURE.md` |
-| المعمارية العامة | `ARCHITECTURE.md` |
-| التقنيات المستخدمة فعليًا | `TECH_STACK.md` |
-| قاعدة البيانات والجداول | `DATABASE_GUIDE.md` |
-| تسجيل الدخول والصلاحيات | `AUTH_GUIDE.md` |
-| الأمان | `SECURITY.md` |
-| النشر للإنتاج | `DEPLOYMENT.md`, `PRODUCTION_CHECKLIST.md` |
+| How to run the project | `README.md`, `RUNNING.md` |
+| File structure in detail | `PROJECT_STRUCTURE.md` |
+| Overall architecture | `ARCHITECTURE.md` |
+| Technologies actually used | `TECH_STACK.md` |
+| Database schema and tables | `DATABASE_GUIDE.md` |
+| Login and permissions | `AUTH_GUIDE.md` |
+| Security details | `SECURITY.md` |
+| Production deployment | `DEPLOYMENT.md`, `PRODUCTION_CHECKLIST.md` |
 
 ---
 

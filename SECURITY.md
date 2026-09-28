@@ -1,51 +1,51 @@
-# 🔒 الأمان وحماية البيانات
+# Security and Data Protection
 
-## ⚠️ المشكلة الأمنية في النسخة الأولى (v1 - قبل الـ backend)
+## Security issue in the original v1 version (pre-backend)
 
-> هذا القسم تاريخي: يوصف مشكلة النسخة الأولى (v1) اللي كانت بتخزن كل حاجة في `localStorage` بالمتصفح بدون أي سيرفر حقيقي. **النظام الحالي (v2) طبّق "الحل 1" تحت بالكامل - Backend حقيقي.** باقي الحلول (Firebase، Encryption) اتسيبت هنا للمرجعية بس، ومش مطبّقة ولا محتاجة تتطبّق.
+> This section is historical. It describes the first version of the app, which stored everything in the browser `localStorage` without a real backend. The current system is the fully implemented backend-based version, and the alternative approaches below are included for reference only and are not used in the codebase.
 
-### المشكلة:
+### The problem
 ```
-المستخدم يفتح F12 → Console
+User opens F12 → Console
          ↓
 localStorage.getItem('seafood_qms_db')
          ↓
-يشوف كل البيانات ويعدلها!
+All data is visible and editable
          ↓
-❌ Security Breach!
+❌ Security breach!
 ```
 
-### يعني إيه؟
-- ❌ أي حد يقدر يفتح F12 ويشوف كل البيانات
-- ❌ يقدر يغير حالة المشاكل
-- ❌ يقدر يسجل دخول بأي حساب
-- ❌ يقدر يمسح البيانات
-- ❌ يقدر يضيف مشاكل مزيفة
+### What this means
+- ❌ Anyone can open the browser console and inspect the data
+- ❌ Anyone can change issue status
+- ❌ Anyone can log in as any user
+- ❌ Anyone can delete data
+- ❌ Anyone can add fake issues
 
-### ليه ده بيحصل؟
-لأن البيانات مخزنة في **localStorage** في المتصفح، يعني:
-- البيانات في جهاز المستخدم
-- مفيش server-side validation
-- مفيش authentication حقيقي
-- مفيش authorization checks
+### Why it happened
+Because the data was stored in browser `localStorage`, meaning:
+- data lived on the client machine
+- there was no server-side validation
+- there was no real authentication
+- there were no authorization checks
 
 ---
 
-## ✅ الحلول المتاحة
+## Available solutions
 
-### الحل 1: Backend حقيقي (مطبَّق ✅)
+### Solution 1: Real backend (implemented ✅)
 
-**الوصف:**
-قاعدة البيانات على السيرفر، والـ frontend بيتكلم مع الـ backend عبر API فقط.
+Description:
+The database sits on the server, and the frontend talks to the backend through an API.
 
-**المميزات:**
-- ✅ البيانات على السيرفر (مش في المتصفح)
-- ✅ Authentication حقيقي (JWT)
-- ✅ Authorization checks (بما فيها Role-Based Access Control)
+Benefits:
+- ✅ Data is stored on the server instead of in the browser
+- ✅ Real authentication with JWT
+- ✅ Authorization checks including role-based access control
 - ✅ Server-side validation
-- ✅ Secure password hashing (bcrypt)
+- ✅ Secure password hashing with bcrypt
 
-**البنية:**
+Architecture:
 ```
 ┌─────────────────┐
 │   Frontend      │
@@ -70,31 +70,31 @@ localStorage.getItem('seafood_qms_db')
 └─────────────────┘
 ```
 
-**الكود الفعلي:**
-- `server/src/index.ts` - كل منطق السيرفر (auth, routes, middleware)
-- `client/src/services/apiClient.ts` - عميل الـ API في الفرونت إند
+Actual code:
+- `server/src/index.ts` - server logic for auth, routes, and middleware
+- `client/src/services/apiClient.ts` - frontend API client
 
 ---
 
-### الحل 2: Firebase Firestore (بديل سحابي)
+### Solution 2: Firebase Firestore (cloud alternative)
 
-**الوصف:**
-استخدام Firebase كـ Backend as a Service.
+Description:
+Use Firebase as a Backend as a Service.
 
-**المميزات:**
-- ✅ No server needed
+Benefits:
+- ✅ No custom server required
 - ✅ Real-time updates
 - ✅ Security rules
-- ✅ Authentication مدمج
+- ✅ Built-in authentication
 - ✅ Scalable
 
-**التنفيذ:**
-1. اعمل مشروع Firebase
-2. فعّل Firestore
-3. حط Security Rules
-4. استخدم Firebase SDK في الـ frontend
+Implementation steps:
+1. Create a Firebase project
+2. Enable Firestore
+3. Add security rules
+4. Use the Firebase SDK in the frontend
 
-**Security Rules مثال:**
+Example rules:
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -114,74 +114,74 @@ service cloud.firestore {
 
 ---
 
-### الحل 3: Encryption في localStorage (مش موصى به)
+### Solution 3: Encryption in localStorage (not recommended)
 
-**الوصف:**
-تشفير البيانات في localStorage.
+Description:
+Encrypt data before storing it in localStorage.
 
-**المشاكل:**
-- ❌ الـ encryption key في الـ frontend
-- ❌ حد يقدر يفك التشفير
-- ❌ مش حل حقيقي للأمان
+Problems:
+- ❌ Encryption key is in the frontend
+- ❌ Anyone can decode it if the key is exposed
+- ❌ Not a real security solution
 - ❌ Performance issues
 
-**مش موصى به إلا للـ demo فقط!**
+Not recommended except for demos.
 
 ---
 
-## 🛡️ مقارنة الحلول
+## Security comparison
 
-| الحل | الأمان | السهولة | التكلفة | الإنتاج |
-|------|--------|---------|---------|---------|
-| **Backend حقيقي** | ✅ عالي | ⚠️ متوسط | 💰 منخفض | ✅ نعم |
-| **Firebase** | ✅ عالي | ✅ سهل | 💰 متوسط | ✅ نعم |
-| **Encryption** | ❌ ضعيف | ✅ سهل | 💰 مجاني | ❌ لا |
+| Option | Security | Ease of use | Cost | Production-ready |
+|---|---|---|---|---|
+| **Real backend** | ✅ High | ⚠️ Medium | 💰 Low | ✅ Yes |
+| **Firebase** | ✅ High | ✅ Easy | 💰 Medium | ✅ Yes |
+| **Encrypted localStorage** | ❌ Weak | ✅ Easy | 💰 Free | ❌ No |
 
 ---
 
-## 🚀 طريقة التشغيل (النظام مبني بالفعل)
+## How to run the app
 
 ```bash
-# تثبيت كل الـ dependencies (root + client + server)
+# Install all dependencies (root + client + server)
 npm run install:all
 
-# تطوير - Frontend و Backend مع بعض
+# Development - frontend and backend together
 npm run dev
 
-# إنتاج
+# Production
 npm run build
 npm start
 ```
 
-راجع `README.md` و `RUNNING.md` للتفاصيل الكاملة والإعدادات (`server/.env`, `client/.env`).
+Refer to `README.md` and `RUNNING.md` for full setup details and environment configuration (`server/.env`, `client/.env`).
 
-### التحقق من الأمان
+### Security verification
 
 ```bash
-# جرب تفتح F12 Console
-# حاول تعدل البيانات
-# مش هينفع! ✅
+# Open the browser devtools console
+# Try to modify data in the app
+# It will not work in the production-ready backend version ✅
 ```
 
 ---
 
-## 🔐 مميزات الـ Backend
+## Backend security features
 
 ### 1. Authentication
 ```javascript
-// تسجيل الدخول
+// Login
 POST /api/auth/login
 {
   "email": "admin@seafood.com",
   "password": "Admin@123456"
 }
 
-// الرد
+// Response
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
   "user": {
     "id": "admin-1",
-    "name": "مدير النظام",
+    "name": "System Administrator",
     "role": "admin"
   }
 }
@@ -189,43 +189,43 @@ POST /api/auth/login
 
 ### 2. Authorization
 ```javascript
-// كل request لازم يكون فيه token
+// Every request must include a token
 GET /api/issues
 Headers: {
   "Authorization": "Bearer eyJhbGciOiJIUzI1NiIs..."
 }
 
-// لو مفيش token → 401 Unauthorized
-// لو token غلط → 403 Forbidden
+// No token -> 401 Unauthorized
+// Invalid token -> 403 Forbidden
 ```
 
-**Role-Based Access Control:** middleware إضافي (`requireRole(...roles)`) بيقيّد بعض الـ endpoints بدور معيّن، بغض النظر عن أي تحقق في الواجهة. مثال حقيقي من الكود:
+Role-based access control is enforced by a dedicated middleware (`requireRole(...roles)`) that limits certain endpoints to specific roles regardless of what the UI allows. Real example from the codebase:
 ```ts
 app.delete('/api/issues/:id', authenticateToken, requireRole('admin', 'quality_manager'), (req, res) => {
-  // مهندس الجودة (quality_engineer) هياخد 403 حتى لو نادى الـ API مباشرة
+  // A quality engineer would get 403 even if they called the API directly
 });
 ```
 
-### 3. Server-side Validation
+### 3. Server-side validation
 ```javascript
-// Backend يتحقق من البيانات
+// Backend validates core payload fields
 if (!title || !description) {
   return res.status(400).json({ error: 'Missing required fields' });
 }
 ```
 
-### 4. Rate Limiting
+### 4. Rate limiting
 ```javascript
-// حد 100 request كل 15 دقيقة
+// Limit to 100 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
 ```
 
-### 5. Security Headers
+### 5. Security headers
 ```javascript
-// Helmet بيضيف security headers
+// Helmet adds security headers
 app.use(helmet());
 // Content-Security-Policy
 // X-Content-Type-Options
@@ -233,15 +233,15 @@ app.use(helmet());
 // ...
 ```
 
-### 6. JSON Payload Limit
+### 6. JSON payload limit
 ```javascript
-// 25mb - كافي لكذا صورة (base64) في تقرير مشكلة واحد
+// 25mb is enough for a few base64 issue photos in a single report
 app.use(express.json({ limit: '25mb' }));
 ```
 
 ---
 
-## 📊 البنية النهائية
+## Final architecture
 
 ```
 ┌─────────────────────────────────────────┐
@@ -258,6 +258,7 @@ app.use(express.json({ limit: '25mb' }));
 │  - Authentication (JWT)                 │
 │  - Authorization                        │
 │  - Validation                           │
+
 │  - Rate Limiting                        │
 │  - Security Headers                     │
 └──────────────┬──────────────────────────┘

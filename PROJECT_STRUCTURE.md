@@ -1,6 +1,6 @@
-# 🏗️ بنية المشروع المنفصلة
+# Project Structure
 
-## 📁 هيكل المجلدات
+## Folder layout
 
 ```
 seafood-qms/
@@ -12,12 +12,12 @@ seafood-qms/
 │   │   ├── hooks/             # Shared data-fetching hooks
 │   │   ├── pages/             # Page components (lazy-loaded)
 │   │   ├── services/          # API services
-│   │   ├── utils/             # labels.ts - shared labels/colors/icons
+│   │   ├── utils/             # labels.ts - shared labels, colors, and icons
 │   │   ├── types/             # TypeScript types
 │   │   ├── App.tsx            # Main app component
 │   │   ├── main.tsx           # Entry point
 │   │   └── index.css          # Global styles
-│   ├── dist/                  # Build output (بعد الـ build)
+│   ├── dist/                  # Build output after the build step
 │   ├── index.html             # HTML entry
 │   ├── .env                   # VITE_API_URL
 │   ├── package.json           # Client dependencies
@@ -27,27 +27,27 @@ seafood-qms/
 ├── server/                    # Backend (Express + TypeScript)
 │   ├── src/                   # Source code
 │   │   └── index.ts           # Main server file
-│   ├── dist/                  # Compiled JavaScript (بعد الـ build)
+│   ├── dist/                  # Compiled JavaScript output after build
 │   ├── .env                   # PORT, JWT_SECRET, DB_PATH, CLIENT_URL
 │   ├── package.json           # Server dependencies
 │   └── tsconfig.json          # TypeScript config
 │
 ├── package.json               # Root orchestration
 ├── README.md                  # Main documentation
-└── seafood_qms.db             # SQLite database (يتم إنشاؤه تلقائياً)
+└── seafood_qms.db             # SQLite database (created automatically)
 ```
 
 ---
 
-## 🚀 التشغيل
+## Running the app
 
-### 1️⃣ التثبيت الأولي
+### 1. Initial install
 
 ```bash
-# تثبيت كل الـ dependencies
+# Install all dependencies
 npm run install:all
 
-# أو يدوياً:
+# Or manually:
 npm install
 cd client && npm install
 cd ../server && npm install
@@ -56,115 +56,115 @@ cd ..
 
 ---
 
-### 2️⃣ التطوير (Development)
+### 2. Development
 
-**Terminal 1 - Backend:**
+Terminal 1 - Backend:
 ```bash
 npm run dev:server
-# أو
+# or
 cd server && npm run dev
 ```
 
-**Terminal 2 - Frontend:**
+Terminal 2 - Frontend:
 ```bash
 npm run dev:client
-# أو
+# or
 cd client && npm run dev
 ```
 
-**النتيجة:**
+Result:
 - Backend: `http://localhost:3001`
 - Frontend: `http://localhost:5173`
 
 ---
 
-### 3️⃣ الإنتاج (Production)
+### 3. Production build
 
 ```bash
-# Build كل حاجة
+# Build everything
 npm run build
 
-# أو يدوياً:
-npm run build:client    # Build Frontend → client/dist/
-npm run build:server    # Build Backend → server/dist/
+# or manually:
+npm run build:client    # Frontend to client/dist/
+npm run build:server    # Backend to server/dist/
 
-# تشغيل الـ Backend (يخدم الـ Frontend من client/dist/)
+# Start the backend (it serves the frontend from client/dist/)
 npm start
-# أو
+# or
 cd server && npm start
 ```
 
-**النتيجة:**
-- كل حاجة على: `http://localhost:3001`
-- الـ Backend يخدم الـ Frontend من `client/dist/`
+Result:
+- The app is available on `http://localhost:3001`
+- The backend serves the frontend from `client/dist/`
 
 ---
 
-## 📦 الأوامر المتاحة
+## Available commands
 
-### Root Commands:
+### Root commands
 ```bash
-npm run dev              # تشغيل Frontend + Backend معاً
-npm run dev:client       # تشغيل Frontend فقط
-npm run dev:server       # تشغيل Backend فقط
+npm run dev              # Start frontend + backend together
+npm run dev:client       # Start frontend only
+npm run dev:server       # Start backend only
 
-npm run build            # Build كل حاجة
-npm run build:client     # Build Frontend فقط
-npm run build:server     # Build Backend فقط
+npm run build            # Build everything
+npm run build:client     # Build frontend only
+npm run build:server     # Build backend only
 
-npm start                # تشغيل Backend (يخدم Frontend)
+npm start                # Start backend (serves the frontend)
 
-npm run install:all      # تثبيت كل الـ dependencies
+npm run install:all      # Install all dependencies
 ```
 
-### Client Commands:
+### Client commands
 ```bash
 cd client
-npm run dev              # تشغيل Vite dev server
-npm run build            # Build للإنتاج
-npm run preview          # معاينة الـ build
+npm run dev              # Start Vite dev server
+npm run build            # Production build
+npm run preview          # Preview the build
 ```
 
-### Server Commands:
+### Server commands
 ```bash
 cd server
-npm run dev              # تشغيل Backend مع watch mode
-npm run build            # Compile TypeScript → JavaScript
-npm start                # تشغيل الـ compiled server
+npm run dev              # Start backend in watch mode
+npm run build            # Compile TypeScript to JavaScript
+npm start                # Start the compiled server
 ```
 
 ---
 
-## 🔧 البنية التفصيلية
+## Detailed structure
 
-### Frontend (client/)
+### Frontend (`client/`)
 
-**التقنيات:**
+Technologies:
 - React 18
 - TypeScript
 - Vite
 - Tailwind CSS 4
-- Recharts (charts - lazy-loaded)
-- jsPDF (PDF export - lazy-loaded)
+- Recharts (charts, lazy-loaded)
+- jsPDF (PDF export, lazy-loaded)
 
-> لا يوجد router library (`react-router-dom` مش مستخدم) - التنقل بين الصفحات بـ React state بسيط (`currentPage` في `App.tsx`) وكل صفحة `React.lazy`-loaded.
+There is no router library (`react-router-dom` is not used). Navigation is handled by simple React state in `App.tsx` and each page is loaded lazily.
 
-**الهيكل:**
+Structure:
 ```
 client/src/
 ├── components/
-│   ├── Layout.tsx           # سايدبار متجاوب (drawer على الموبايل) + قائمة حسب الدور
+│   ├── Layout.tsx           # Responsive sidebar with role-based navigation
 │   ├── ErrorBoundary.tsx
 │   └── dashboard/
-│       ├── DashboardCharts.tsx         # الرسوم البيانية (lazy-loaded من Dashboard.tsx)
-│       └── DashboardChartsSkeleton.tsx # placeholder وقت تحميل الرسوم
+│       ├── DashboardCharts.tsx         # Charts (lazy-loaded from Dashboard.tsx)
+│       └── DashboardChartsSkeleton.tsx # Loading placeholder
 ├── contexts/            # State management
 │   ├── AuthContext.tsx
 │   └── DataContext.tsx
 ├── hooks/
-│   ├── useBranches.ts   # تحميل الفروع + branchName() لookup
-│   └── useUsers.ts      # تحميل المستخدمين + userName() lookup
-├── pages/               # كل صفحة lazy-loaded من App.tsx
+│   ├── useBranches.ts   # Loads branches + branch lookup function
+│   └── useUsers.ts      # Loads users + user lookup function
+├── pages/               # Each page is lazy-loaded from App.tsx
 │   ├── Dashboard.tsx
 │   ├── Login.tsx
 │   ├── ReportIssue.tsx
@@ -175,19 +175,19 @@ client/src/
 ├── services/            # API calls
 │   └── apiClient.ts
 ├── utils/
-│   └── labels.ts        # كل التسميات/الألوان/الأيقونات (حالة، أولوية، فئة، مطابقة، نوع فرع، دور) - مصدر واحد
+│   └── labels.ts        # Labels, colors, icons, and status mappings
 ├── types/               # TypeScript types (Issue, Branch, User, PageId, ...)
 │   └── index.ts
-├── App.tsx              # Main component + lazy() imports للصفحات
+├── App.tsx              # Main component + lazy() page imports
 ├── main.tsx             # Entry point
 └── index.css            # Global styles
 ```
 
 ---
 
-### Backend (server/)
+### Backend (`server/`)
 
-**التقنيات:**
+Technologies:
 - Express.js 5
 - TypeScript
 - better-sqlite3
@@ -196,28 +196,30 @@ client/src/
 - dotenv
 - Helmet
 - CORS
-- Rate Limiting
+- Rate limiting
 
-**الهيكل:**
+Structure:
 ```
 server/src/
-├── index.ts              # App bootstrap: middleware, mount routes, static serving, start
+├── index.ts              # App bootstrap: middleware, route mounting, static serving, startup
 ├── config/
-│   └── index.ts           # PORT, JWT_SECRET, DB_PATH, CLIENT_DIST_PATH, ... (من .env)
+│   └── index.ts          # PORT, JWT_SECRET, DB_PATH, CLIENT_DIST_PATH, ... from .env
 ├── db/
-│   ├── index.ts           # Database connection + initDB() (تعريف الجداول والـ indexes)
-│   └── seed.ts             # seedInitialData() - بيانات تجريبية أول تشغيل
+│   ├── index.ts          # Database connection + initDB() (schema + indexes)
+│   └── seed.ts           # seedInitialData() - demo data on first startup
 ├── middleware/
-│   └── auth.ts             # authenticateToken, requireRole، وتوسيع Express.Request
+│   └── auth.ts           # authenticateToken, requireRole, request extension
 ├── routes/
-│   ├── auth.routes.ts      # POST /api/auth/login
-│   ├── issues.routes.ts    # GET/POST/PUT/DELETE /api/issues (DELETE محمي بـ requireRole)
-│   ├── branches.routes.ts  # GET /api/branches
-│   ├── users.routes.ts     # GET /api/users, /api/users/:id
-│   ├── stats.routes.ts     # GET /api/stats/issues
-│   └── health.routes.ts    # GET /api/health
+│   ├── auth.routes.ts    # POST /api/auth/login
+│   ├── issues.routes.ts  # GET/POST/PUT/DELETE /api/issues (DELETE protected by requireRole)
+│   ├── branches.routes.ts# GET /api/branches
+│   ├── users.routes.ts   # GET /api/users, /api/users/:id
+│   ├── stats.routes.ts   # GET /api/stats/issues
+│   └── health.routes.ts  # GET /api/health
 └── utils/
-    └── mapIssueRow.ts       # تحويل snake_case (DB) → camelCase (API response)
+    └── mapIssueRow.ts    # Converts snake_case (DB) to camelCase (API response)
+```
+
 ```
 
 > **ملحوظة ESM مهمة:** المشروع `"type": "module"`، فكل استيراد نسبي بين الملفات لازم يكون بامتداد `.js` صريح (`from '../db/index.js'`)، مش `from '../db'` - Node's native ESM resolver (على عكس bundler زي Vite) مبيحلّش الفولدرات لملف `index.js` تلقائيًا.

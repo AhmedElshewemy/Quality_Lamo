@@ -1,36 +1,36 @@
-# 🛠️ التقنيات والـ Frameworks المستخدمة
+# Technologies and Frameworks Used
 
-## 📋 نظرة عامة
+## Overview
 
-المشروع مبني بتقنيات حقيقية ومطبَّقة بالفعل - كل قسم هنا يوصف كود موجود فعليًا في المستودع، مش خيارات نظرية أو مقترحة.
+This project is built with technologies that are actually present in the repository. Each section below describes code that exists in the project rather than hypothetical or suggested alternatives.
 
 ---
 
-## 🎨 Frontend Technologies
+## Frontend technologies
 
 ### React 18
-**الموقع:** `client/package.json`
+**Location:** `client/package.json`
 
-مكتبة JavaScript لبناء واجهات المستخدم. مستخدمة بـ Functional Components + Hooks (`useState`, `useEffect`, `useMemo`, `useContext`) و Context API (`AuthContext`, `DataContext`) و `React.lazy` + `Suspense` للتحميل المؤجل لكل صفحة (راجع قسم الأداء تحت).
+React is used to build the user interface with functional components and hooks (`useState`, `useEffect`, `useMemo`, `useContext`) together with the Context API (`AuthContext`, `DataContext`) and `React.lazy` + `Suspense` for lazy-loaded pages.
 
 ### TypeScript
-**الموقع:** `client/tsconfig.json`, `server/tsconfig.json`
+**Location:** `client/tsconfig.json`, `server/tsconfig.json`
 
-`strict: true` في الاتنين، مع `noUnusedLocals` و `noUnusedParameters` مفعّلين - أي import أو متغير مش مستخدم يفشّل الـ build عمدًا، عشان الكود يفضل نظيف.
+Both configs use `strict: true`, with `noUnusedLocals` and `noUnusedParameters` enabled. This means any unused import or variable fails the build intentionally, keeping the codebase clean.
 
 ### Vite
-**الموقع:** `client/vite.config.ts`
+**Location:** `client/vite.config.ts`
 
-Build tool للفرونت إند. فيه `server.proxy` بيحوّل `/api/*` لـ `http://localhost:3001` وقت التطوير - ده اللي يخلي `VITE_API_URL=/api` (نسبي) يشتغل صحيح في التطوير والإنتاج مع بعض (راجع `README.md` → قسم الإعدادات).
+Vite is the frontend build tool. The `server.proxy` setting redirects `/api/*` to `http://localhost:3001` during development, which allows `VITE_API_URL=/api` to work both in development and in simple production setups.
 
 ### Tailwind CSS 4
-**الموقع:** `client/postcss.config.js`, `client/src/index.css`
+**Location:** `client/postcss.config.js`, `client/src/index.css`
 
-Utility-first CSS. النسخة 4 بتستخدم `@import "tailwindcss";` في `index.css` بدل الـ `@tailwind base/components/utilities` القديمة، وplugin الـ PostCSS الخاص بيها (`@tailwindcss/postcss`) - لازم يكون متطابق مع نسخة `tailwindcss` نفسها في `package.json`، وإلا الـ build بيفشل بخطأ "Cannot find module '@tailwindcss/postcss'".
+Tailwind is used as a utility-first CSS framework. The v4 setup uses `@import "tailwindcss";` instead of the older `@tailwind base/components/utilities` pattern, and the matching PostCSS plugin (`@tailwindcss/postcss`) must align with the installed `tailwindcss` version; otherwise the build fails with the error "Cannot find module '@tailwindcss/postcss'".
 
-### التنقل بين الصفحات (بدون router library)
+### Page navigation without a router library
 
-مفيش `react-router-dom` ولا أي مكتبة routing في المشروع. التنقل بـ React state بسيط في `client/src/App.tsx`:
+There is no `react-router-dom` or other routing library in the project. Navigation is handled by simple React state in `client/src/App.tsx`:
 ```typescript
 const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
 
@@ -42,17 +42,17 @@ const renderPage = () => {
   }
 };
 ```
-`PageId` (في `client/src/types/index.ts`) هو union type لكل الصفحات الممكنة، فأي اسم صفحة غلط بيبوّظ الـ TypeScript build فورًا بدل ما يبان باج وقت التشغيل.
+`PageId` in `client/src/types/index.ts` is a union type covering every page. A wrong page name breaks the TypeScript build immediately instead of failing only at runtime.
 
 ---
 
-## 📊 Data Visualization
+## Data visualization
 
 ### Recharts
-**الإصدار المثبَّت:** `^2.15.4`
-**الموقع:** `client/src/components/dashboard/DashboardCharts.tsx`, `client/src/pages/Reports.tsx`
+**Installed version:** `^2.15.4`
+**Location:** `client/src/components/dashboard/DashboardCharts.tsx`, `client/src/pages/Reports.tsx`
 
-الرسوم المستخدمة فعليًا: `LineChart` (اتجاه المشاكل عبر الوقت)، `PieChart` (نسبة المطابقة)، `BarChart` (أداء الفروع، توزيع الفئات). مفيش `AreaChart` مستخدم.
+The charts currently used are `LineChart`, `PieChart`, and `BarChart` for time trends, compliance ratio, and branch/category distribution.
 
 ```typescript
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -66,15 +66,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 </BarChart>
 ```
 
-**ملاحظة أداء مهمة:** `Dashboard.tsx` نفسه **لا يستورد** `recharts` مباشرة. الرسوم معزولة في `DashboardCharts.tsx` ومحمّلة بـ `React.lazy` جوه `Suspense` منفصل داخل الصفحة - كروت الإحصائيات والجدول بيظهروا فورًا، والرسوم تتحمّل في الخلفية بعد كده. راجع قسم الأداء تحت.
+Important performance note: `Dashboard.tsx` does not import `recharts` directly. The charts are isolated in `DashboardCharts.tsx` and loaded with `React.lazy` inside a dedicated `Suspense` block so the summary cards and main table render first while the charts load afterward.
 
 ---
 
-## ✅ الفورمات (بدون مكتبة validation)
+## Form handling without a validation library
 
-**الموقع:** `client/src/pages/ReportIssue.tsx`
+**Location:** `client/src/pages/ReportIssue.tsx`
 
-مفيش `react-hook-form` ولا `zod` ولا أي مكتبة تحقق. الفورم مبني بـ `useState` عادي، والتحقق (`isFormValid`) عبارة عن شرط بسيط بيتأكد إن الحقول المطلوبة مليانة قبل تفعيل زرار الإرسال:
+There is no `react-hook-form`, `zod`, or validation library in the project. The form is built with plain `useState`, and a simple `isFormValid` check ensures the required fields are present before enabling submit:
 ```typescript
 const isFormValid =
   formData.title.trim() &&
@@ -84,15 +84,15 @@ const isFormValid =
   formData.priority &&
   formData.complianceStatus;
 ```
-التحقق الحقيقي من نوع البيانات (مطلوب/مفيش، أنواع enum صحيحة) بيحصل تاني على السيرفر (`server/src/routes/issues.routes.ts`) قبل الحفظ في قاعدة البيانات.
+The actual validation of field values is done on the server in `server/src/routes/issues.routes.ts` before the data is saved.
 
 ---
 
-## 📄 PDF Generation
+## PDF generation
 
 ### jsPDF + jspdf-autotable
-**الإصدار المثبَّت:** `jspdf ^4.2.1`, `jspdf-autotable ^5.0.8`
-**الموقع:** `client/src/pages/Reports.tsx`
+**Installed versions:** `jspdf ^4.2.1`, `jspdf-autotable ^5.0.8`
+**Location:** `client/src/pages/Reports.tsx`
 
 ```typescript
 const generatePDF = async () => {
@@ -110,16 +110,16 @@ const generatePDF = async () => {
 };
 ```
 
-⚠️ **مهم:** خطوط jsPDF المدمجة **مبتدعمش العربي**. التقرير المُصدَّر PDF بعناوين وتسميات إنجليزية عمدًا، حتى إن واجهة الموقع نفسها بالعربي بالكامل. لو محتاج PDF بالعربي، الحل هو تضمين خط عربي (TTF) في jsPDF - ده لسه مش متطبّق.
+Important: the bundled jsPDF fonts do not support Arabic text. The generated PDF is intentionally titled and labeled in English even though the rest of the app may be in Arabic. Supporting Arabic PDF output would require adding a custom Arabic TTF font, which is not implemented yet.
 
-**تحميل مؤجل:** المكتبتين ديل (~260KB مع تبعياتهم `html2canvas` و `dompurify`) بيتحمّلوا بـ dynamic `import()` **جوه** دالة `generatePDF`، مش في أول الملف - يعني حتى لو المستخدم فتح صفحة التقارير، المكتبات ديل ما بتتحمّلش إلا لو دوس "تصدير PDF" فعليًا.
+The libraries are lazy-loaded via `import()` within the `generatePDF` function so they are not loaded up front when the page is opened.
 
 ---
 
-## 🎨 Icons & Notifications
+## Icons and notifications
 
 ### Lucide React
-**الموقع:** `client/src/components/Layout.tsx` وكل صفحة
+**Location:** `client/src/components/Layout.tsx` and other pages
 
 ```typescript
 import { LayoutDashboard, FileText, PlusCircle } from 'lucide-react';
@@ -127,16 +127,18 @@ import { LayoutDashboard, FileText, PlusCircle } from 'lucide-react';
 ```
 
 ### React Hot Toast
-**الموقع:** `client/src/App.tsx` (`<Toaster />`)، مستخدم في كل الصفحات اللي فيها إجراءات (`ReportIssue`, `IssuesList`) لإشعارات النجاح/الفشل بدل رسائل ثابتة في الصفحة.
+**Location:** `client/src/App.tsx` (`<Toaster />`)
+
+Used across pages with actions such as `ReportIssue` and `IssuesList` to display success and error notifications without embedding static messages directly in the page.
 
 ---
 
-## 🛡️ Error Handling
+## Error handling
 
-### Error Boundary (React أصلي، بدون مكتبة)
-**الموقع:** `client/src/components/ErrorBoundary.tsx`
+### Error Boundary (native React, no external library)
+**Location:** `client/src/components/ErrorBoundary.tsx`
 
-Class component عادي باستخدام واجهة React المدمجة (`getDerivedStateFromError`, `componentDidCatch`) - مفيش مكتبة `react-error-boundary` أو أي حاجة خارجية:
+This is a standard class component using React built-ins (`getDerivedStateFromError`, `componentDidCatch`):
 ```typescript
 class ErrorBoundary extends Component<Props, State> {
   static getDerivedStateFromError(_: Error): State {
@@ -147,7 +149,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
   render() {
     if (this.state.hasError) {
-      return <div>حدث خطأ - <button onClick={() => window.location.reload()}>إعادة تحميل</button></div>;
+      return <div>An error occurred - <button onClick={() => window.location.reload()}>Reload</button></div>;
     }
     return this.props.children;
   }
@@ -156,26 +158,27 @@ class ErrorBoundary extends Component<Props, State> {
 
 ---
 
-## 💾 Database
+## Database
 
 ### better-sqlite3
-**الموقع:** `server/src/db/index.ts`
+**Location:** `server/src/db/index.ts`
 
-SQLite حقيقي على السيرفر (Node.js)، **مش** في المتصفح. مفيش `sql.js` ومفيش Firebase/Firestore في المشروع - راجع `DATABASE_GUIDE.md` للتفاصيل الكاملة (الجداول، الـ seeding، إلخ).
+This is a real SQLite database running on the Node.js server, not in the browser. There is no `sql.js` or Firebase/Firestore usage in the project.
+
 ```typescript
 import Database from 'better-sqlite3';
 const db = new Database(DB_PATH);
 
 const issues = db.prepare('SELECT * FROM issues WHERE status = ?').all('open');
-db.prepare('INSERT INTO issues (title, description) VALUES (?, ?)').run('عنوان', 'وصف');
+db.prepare('INSERT INTO issues (title, description) VALUES (?, ?)').run('Issue title', 'Issue description');
 ```
 
 ---
 
-## 🔐 Authentication & Backend
+## Authentication and backend
 
 ### Express.js 5
-**الموقع:** `server/src/index.ts` (bootstrap) + `server/src/routes/*.ts`
+**Location:** `server/src/index.ts` and `server/src/routes/*.ts`
 
 ```typescript
 import express from 'express';
@@ -183,18 +186,19 @@ const app = express();
 app.use(express.json());
 app.use('/api/issues', issuesRoutes);
 ```
-> Express 5 بيستخدم `path-to-regexp` v7، اللي بطّلت تدعم الصيغة القديمة لـ wildcard route (`app.get('*', ...)`). الصيغة الصحيحة المستخدمة هنا: `app.get('/*splat', ...)` (لخدمة صفحة الـ SPA لأي route غير API).
+
+> Express 5 uses `path-to-regexp` v7, which removed support for the older wildcard pattern `app.get('*', ...)`. The correct version used here is `app.get('/*splat', ...)` to serve the SPA for non-API routes.
 
 ### dotenv
-**الموقع:** أول سطر في `server/src/index.ts`
+**Location:** at the top of `server/src/index.ts`
 
 ```typescript
-import 'dotenv/config';   // لازم يكون أول import في الملف
+import 'dotenv/config';   // must be the first import in the file
 ```
-بيحمّل `server/.env` في `process.env`. بدونه، أي تعديل في `.env` (زي `PORT`) بيتكتب بس من غير أي تأثير فعلي.
+This loads `server/.env` into `process.env`. Without it, values such as `PORT` are not applied.
 
 ### JWT (jsonwebtoken)
-**الموقع:** `server/src/routes/auth.routes.ts`, `server/src/middleware/auth.ts`
+**Location:** `server/src/routes/auth.routes.ts`, `server/src/middleware/auth.ts`
 
 ```typescript
 const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
@@ -205,8 +209,8 @@ jwt.verify(token, JWT_SECRET, (err, user) => {
 });
 ```
 
-### Role-Based Access Control (middleware مخصّص)
-**الموقع:** `server/src/middleware/auth.ts`
+### Role-based access control (custom middleware)
+**Location:** `server/src/middleware/auth.ts`
 
 ```typescript
 export const requireRole = (...roles: string[]) => (req, res, next) => {
@@ -216,22 +220,22 @@ export const requireRole = (...roles: string[]) => (req, res, next) => {
   next();
 };
 
-// الاستخدام: حذف مشكلة محصور في admin/quality_manager
+// Example usage: delete issue is restricted to admin / quality_manager
 app.delete('/api/issues/:id', authenticateToken, requireRole('admin', 'quality_manager'), handler);
 ```
 
 ### bcryptjs
-**الموقع:** `server/src/db/seed.ts`, `server/src/routes/auth.routes.ts`
+**Location:** `server/src/db/seed.ts`, `server/src/routes/auth.routes.ts`
 
 ```typescript
 const passwordHash = bcrypt.hashSync(password, 10);
 const validPassword = bcrypt.compareSync(password, user.password_hash);
 ```
-> الاستخدام هنا **synchronous** (`hashSync`/`compareSync`) مش async - مناسب لحجم السيرفر الحالي (SQLite + طلبات محدودة)، لو الحمل كبر يستحق التحويل لـ async.
+> This implementation uses synchronous helpers (`hashSync` / `compareSync`) rather than async methods. That is appropriate for the current app scale (SQLite + limited traffic), but it would be worth converting to async if the load grows substantially.
 
 ---
 
-## 🔒 Security Middleware
+## Security middleware
 
 ### Helmet
 ```typescript
@@ -249,37 +253,37 @@ const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use('/api/', limiter);
 ```
 
-### JSON Payload Limit
+### JSON payload limit
 ```typescript
-app.use(express.json({ limit: '25mb' }));  // كافي لكذا صورة base64 في تقرير مشكلة واحد
+app.use(express.json({ limit: '25mb' }));  // Enough for several base64-encoded images in a single issue report
 ```
 
-كل التفاصيل دي متوزعة على ملفات `server/src/index.ts` (bootstrap) و middleware مخصص - راجع `PROJECT_STRUCTURE.md` لخريطة الملفات كاملة.
+These details are distributed across `server/src/index.ts` and dedicated middleware files. See `PROJECT_STRUCTURE.md` for the full file map.
 
 ---
 
-## 📦 Package Management
+## Package management
 
-### 3 ملفات package.json مستقلة (بدون npm workspaces حقيقية)
+### Three separate package.json files (no real npm workspaces)
 
-المشروع فيه root، `client/`، و `server/` - كل واحد بملف `package.json` خاص بيه ودياله ديبندنسيز مختلفة تمامًا. **مفيش** إعداد `workspaces` حقيقي في npm. الأمر `npm run install:all` في الـ root بس بينفذ `npm install` في التلاتة بالتتابع (`cd client && npm install && cd ../server && npm install`).
+The repo contains a root `package.json`, a `client/` package, and a `server/` package. Each one has its own dependencies and there is no true npm workspaces setup. The root `npm run install:all` runs `npm install` in sequence across all three folders (`cd client && npm install && cd ../server && npm install`).
 
 ---
 
-## 📊 ملخص التقنيات
+## Technology summary
 
-### Frontend Stack:
+### Frontend stack:
 ```
 ┌─────────────────────────────────────┐
-│  React 18 + TypeScript              │  ← Core Framework
+│  React 18 + TypeScript              │  ← Core framework
 ├─────────────────────────────────────┤
-│  Vite                               │  ← Build Tool
+│  Vite                               │  ← Build tool
 ├─────────────────────────────────────┤
 │  Tailwind CSS 4                     │  ← Styling
 ├─────────────────────────────────────┤
 │  Recharts (lazy-loaded)             │  ← Charts
 ├─────────────────────────────────────┤
-│  jsPDF + jspdf-autotable (lazy)     │  ← PDF Export
+│  jsPDF + jspdf-autotable (lazy)     │  ← PDF export
 ├─────────────────────────────────────┤
 │  Lucide React                       │  ← Icons
 ├─────────────────────────────────────┤
@@ -287,10 +291,10 @@ app.use(express.json({ limit: '25mb' }));  // كافي لكذا صورة base64 
 └─────────────────────────────────────┘
 ```
 
-### Backend Stack:
+### Backend stack:
 ```
 ┌─────────────────────────────────────┐
-│  Express.js 5                       │  ← Web Framework
+│  Express.js 5                       │  ← Web framework
 ├─────────────────────────────────────┤
 │  better-sqlite3                     │  ← Database
 ├─────────────────────────────────────┤
@@ -304,15 +308,15 @@ app.use(express.json({ limit: '25mb' }));  // كافي لكذا صورة base64 
 
 ---
 
-## ⚡ الأداء - قرارات حقيقية اتخدناها
+## Performance decisions that were actually made
 
-هذا القسم يوثّق تريد-أوفز حقيقية حصلت في تطوير المشروع، مش نصايح عامة:
+This section documents real trade-offs made during development rather than general advice:
 
-1. **كل صفحة `React.lazy`** في `App.tsx` → أول تحميل بعد تسجيل الدخول ~184KB (59KB مضغوط) بدل تحميل كل الصفحات مرة واحدة.
-2. **الرسوم البيانية معزولة عن باقي الداشبورد** (`DashboardCharts.tsx` جوه `Suspense` منفصل) → كروت الإحصائيات تظهر فورًا، الرسوم (اللي بتسحب معاها ~525KB من مكتبات recharts/d3) تتحمّل في الخلفية بعد كده.
-3. **jsPDF متحمّل بـ dynamic `import()` جوه دالة التصدير نفسها**، مش أعلى الملف → زيارة صفحة التقارير من غير تصدير PDF ما بتنزّلش المكتبة (390KB) خالص.
+1. Every page is loaded with `React.lazy` in `App.tsx`, so the first load after sign-in is smaller than loading every page at once.
+2. Charts are isolated from the rest of the dashboard in `DashboardCharts.tsx`, which is loaded inside its own `Suspense` boundary so summary cards render immediately while chart assets load in the background.
+3. `jsPDF` is loaded via dynamic `import()` inside the export action itself instead of at the top of the file, so visiting the Reports page does not download the library unless the user actually exports a PDF.
 
-القرار الصريح هنا: الداشبورد الغنية (رسوم بيانية من أول لحظة) أهم من أصغر حجم تحميل ممكن - التعويض كان في تأجيل كل حاجة تانية ممكن تتأجل (PDF export، باقي الصفحات).
+The explicit decision here was to prioritize a richer dashboard experience over the smallest possible first-load size, while delaying non-critical assets such as PDF export and secondary pages.
 
 ---
 

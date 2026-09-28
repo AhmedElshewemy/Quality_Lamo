@@ -1,52 +1,52 @@
-# ✅ Production Readiness Checklist
+# Production Readiness Checklist
 
-جدول صادق لما هو مطبَّق فعليًا في الكود مقابل اللي لسه محتاج شغل، قبل أي نشر حقيقي.
+This checklist reflects what is actually implemented in the code versus what still needs work before a real production deployment.
 
-## Code Quality
+## Code quality
 - [x] TypeScript strict mode (`strict`, `noUnusedLocals`, `noUnusedParameters`)
 - [x] Error boundaries (React built-in)
-- [ ] ESLint / Prettier - لسه مفيش config files
-- [ ] مكتبة validation (Zod أو غيرها) - التحقق حاليًا يدوي في كل route
+- [ ] ESLint / Prettier - no config files currently exist
+- [ ] Validation library (Zod or equivalent) - validation is currently manual in each route
 
-## Security (راجع `SECURITY.md` للتفاصيل)
+## Security (see `SECURITY.md`)
 - [x] JWT authentication + bcrypt password hashing
-- [x] Role-Based Access Control (`requireRole`) على الـ endpoints الحساسة
-- [x] Rate limiting, Helmet, CORS, SQL injection prevention (parameterized queries)
-- [~] CSRF - مخاطرة منخفضة (JWT في header مش cookies)، بدون middleware صريح
+- [x] Role-based access control (`requireRole`) on sensitive endpoints
+- [x] Rate limiting, Helmet, CORS, and SQL injection prevention through parameterized queries
+- [~] CSRF risk is low because JWT is sent in headers rather than cookies, but there is no explicit CSRF middleware
 - [ ] Refresh tokens / password reset flow
 
-## Database (راجع `DATABASE_GUIDE.md`)
-- [x] Indexes + Foreign keys
-- [ ] Automated backups - راجع `DEPLOYMENT.md` للنسخ اليدوي المتاح حاليًا
-- [ ] خطة ترقية لـ PostgreSQL/MySQL لو الحجم كبر (SQLite كافي للحجم الحالي)
+## Database (see `DATABASE_GUIDE.md`)
+- [x] Indexes + foreign keys
+- [ ] Automated backups - manual backup is the current option described in `DEPLOYMENT.md`
+- [ ] Upgrade plan for PostgreSQL/MySQL if volume grows beyond SQLite’s current suitability
 
-## Performance (راجع `TECH_STACK.md` → قسم الأداء)
-- [x] Route-level code splitting (`React.lazy` لكل صفحة)
-- [x] الرسوم البيانية والـ PDF export محمّلين عند الطلب بس، مش من أول تحميل
+## Performance (see `TECH_STACK.md` → performance section)
+- [x] Route-level code splitting (`React.lazy` on each page)
+- [x] Charts and PDF export are loaded on demand instead of at initial page load
 
-## Logging & Monitoring
+## Logging & monitoring
 - [x] `/api/health` endpoint
-- [x] `console.log`/`console.error` (اللوجينج الوحيد المتاح حاليًا)
-- [ ] Structured/persistent logging، Error tracking خارجي (Sentry أو غيره)
+- [x] `console.log` / `console.error` are used for the current logging approach
+- [ ] Structured or persistent logging; external tracking such as Sentry is not yet configured
 
 ## Testing
-- [ ] Unit / Integration / E2E tests - لسه مفيش test suite في المشروع
+- [ ] Unit / integration / E2E tests - no test suite exists in the project yet
 
 ---
 
-## 🚀 النشر
+## Deployment
 
-راجع `DEPLOYMENT.md` للخطوات الحقيقية (Docker أو تشغيل مباشر). قبل أي نشر:
+Refer to `DEPLOYMENT.md` for the real deployment steps (Docker or direct Node.js startup). Before deploying:
 
 ```bash
-npm audit          # فحص الثغرات في الـ dependencies
-npm run build       # build الفرونت والباك
-curl http://localhost:3001/api/health   # تأكيد إن السيرفر شغال بعد النشر
+npm audit          # Check dependency vulnerabilities
+npm run build      # Build the frontend and backend
+curl http://localhost:3001/api/health   # Confirm the server is responding after deployment
 ```
 
-وتأكد من:
-- [ ] `JWT_SECRET` تم تغييره لقيمة عشوائية حقيقية (مش القيمة الافتراضية)
-- [ ] `client/.env` مبني بـ `VITE_API_URL=/api` قبل آخر build - راجع `README.md` لو تسجيل الدخول فشل بعد النشر
+Also make sure:
+- [ ] `JWT_SECRET` has been replaced with a real random secret instead of the default placeholder
+- [ ] `client/.env` uses `VITE_API_URL=/api` before the final build; see `README.md` if login fails after deployment
 
 ---
 

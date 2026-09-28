@@ -15,5 +15,5 @@ export const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-p
 export const DB_PATH = process.env.DB_PATH || path.join(PROJECT_ROOT, 'seafood_qms.db');
 export const CLIENT_DIST_PATH =
   process.env.CLIENT_DIST_PATH || path.join(PROJECT_ROOT, 'client', 'dist');
-export const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+export const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3001';
 export const NODE_ENV = process.env.NODE_ENV || 'development';
