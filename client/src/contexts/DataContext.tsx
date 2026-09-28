@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Issue } from '../types';
 import { apiClient } from '../services/apiClient';
+import { useAuth } from './AuthContext';
 
 interface DataContextType {
   issues: Issue[];
@@ -18,13 +19,25 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // DataProvider is mounted once at the top of the app, above <Login/>, so it's
+  // alive before the user logs in and stays alive after. Fetching only on that
+  // initial mount meant the very first request always ran with no token yet
+  // (401), and nothing ever re-fetched once login actually succeeded - the
+  // dashboard stayed empty until a full page reload. Re-running this whenever
+  // isAuthenticated flips fixes that, and clears stale data on logout too.
   useEffect(() => {
-    loadIssues();
-  }, []);
+    if (isAuthenticated) {
+      loadIssues();
+    } else {
+      setIssues([]);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
 
   const loadIssues = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { Suspense ,lazy ,useMemo } from 'react';
 import {
   AlertTriangle,
   CheckCircle,
@@ -29,10 +29,10 @@ import {
 // Dashboard's own chunk - the KPI cards and recent-issues table below render
 // immediately, and this chunk streams in right after instead of blocking them.
 
-// import DashboardChartsSkeleton from '../components/dashboard/DashboardChartsSkeleton';
+ import DashboardChartsSkeleton from '../components/dashboard/DashboardChartsSkeleton';
 
-// const DashboardCharts = lazy(() => import('../components/dashboard/DashboardCharts'));
-import DashboardCharts from '../components/dashboard/DashboardCharts';
+ const DashboardCharts = lazy(() => import('../components/dashboard/DashboardCharts'));
+//import DashboardCharts from '../components/dashboard/DashboardCharts';
 const isResolved = (issue: Issue) => issue.status === 'resolved' || issue.status === 'closed';
 
 /** Percentage change from `previous` to `current`, treating 0→N as a full +100%. */
@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {/* <Suspense fallback={<DashboardChartsSkeleton />}>
+           <Suspense fallback={<DashboardChartsSkeleton />}>
             <DashboardCharts
               hasData={stats.total > 0}
               trendData={trendData}
@@ -252,16 +252,16 @@ const Dashboard: React.FC = () => {
               branchData={branchData}
               categoryData={categoryData}
             />
-          </Suspense> */}
+          </Suspense> 
 
 
-                <DashboardCharts
+                {/* <DashboardCharts
             hasData={stats.total > 0}
            trendData={trendData}
           complianceData={complianceData}
           branchData={branchData}
           categoryData={categoryData}
-                />
+                /> */}
 
           {/* Recent Issues */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100">
