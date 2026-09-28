@@ -3,6 +3,7 @@
 # ---- Stage 1: Build frontend (client) ----
 FROM node:22-alpine AS client-builder
 WORKDIR /app/client
+ENV VITE_API_URL=/api
 COPY client/package*.json ./
 RUN npm ci
 COPY client/ ./
